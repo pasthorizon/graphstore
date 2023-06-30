@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData">
+    <serverData>
+      <paths name="Scyper15 (d104ca22-7ceb-491c-90bc-68f33e00b056)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/fuchs/graph-two" local="$PROJECT_DIR$" web="home/fuchs/graph-two" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debuglocal" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-scyper15" />
+            <excludedPath local="true" path="$PROJECT_DIR$/tests" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release-scyper15" />
+            <excludedPath local="true" path="$PROJECT_DIR$/build" />
+            <excludedPath local="true" path="$PROJECT_DIR$/analysis" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>

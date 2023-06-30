@@ -1,0 +1,5 @@
+/mnt/home/seemant/MITACS/sortledton/build/CMakeFiles/sortledton.dir
+/mnt/home/seemant/MITACS/sortledton/build/CMakeFiles/sortledton_bin.dir
+/mnt/home/seemant/MITACS/sortledton/build/CMakeFiles/dataset_converter.dir
+/mnt/home/seemant/MITACS/sortledton/build/CMakeFiles/edit_cache.dir
+/mnt/home/seemant/MITACS/sortledton/build/CMakeFiles/rebuild_cache.dir
