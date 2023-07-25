@@ -13,8 +13,7 @@
 SnapshotTransaction::SnapshotTransaction(TransactionManager* tm, bool write_only, VersionedTopologyInterface *ds)
         : tm(tm), write_only(write_only), ds(ds) {
   if (!write_only) {
-    read_version = tm->draw_timestamp(false);
-
+    read_version =   45;   //tm->draw_timestamp(false);
     if (ds != nullptr) {
       max_physical_vertex_id = ds->max_physical_vertex();
       number_of_vertices = ds->vertex_count_version(read_version);
@@ -25,7 +24,7 @@ SnapshotTransaction::SnapshotTransaction(TransactionManager* tm, bool write_only
 bool SnapshotTransaction::execute() {
   try {
     aquire_locks_and_insert_vertices();
-    commit_version = tm->draw_timestamp(true);
+    commit_version = 45  ;  //tm->draw_timestamp(true);
     rewrite_inserted_vertex_timestamps();
 
     assert_preconditions();
@@ -45,6 +44,8 @@ bool SnapshotTransaction::execute() {
     }
 //    auto i = 0;
     for (auto [e, properties, properties_size] : edges_to_insert) {
+      
+
       edge_t p_edge (ds->physical_id(e.src), ds->physical_id(e.dst));
 
 //      try {
@@ -297,7 +298,9 @@ void SnapshotTransaction::assert_std_preconditions() {
       }
     }
 
-    // Edges to delete have to exists
+    // Edges to delete have to existsgced_edges = 0;
+// thread_local int VersioningBlockedSkipListAdjacencyList::gc_merges = 0;
+// thread_local int VersioningBlockedSkipListAdjacencyList::gc_to_single_block = 0;
     for (auto e : edges_to_delete) {
       if (!ds->has_edge_version(e, commit_version)) {
         throw EdgeDoesNotExistsException(e);
@@ -324,6 +327,10 @@ size_t SnapshotTransaction::max_physical_vertex() {
 }
 
 bool SnapshotTransaction::insert_edge(edge_t edge, char *properties, size_t property_size) {
+  std::cout<<"property for edge "<<edge.src<<" "<<edge.dst<<" :";
+  for(int i=0;i<property_size;i++)
+  std::cout<<(int)(*(properties+i))<<" ";
+  std::cout<<std::endl;
   locks_to_aquire.push_back(edge.src);
   edges_to_insert.emplace_back(edge, properties, property_size);
   return false;

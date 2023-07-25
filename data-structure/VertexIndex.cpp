@@ -44,9 +44,9 @@ bool VertexIndex::insert_vertex(vertex_id_t id, version_t version) {
     w.release();
 
     // Update index
-    assert(index[p_id].adjacency_set & VERTEX_NOT_USED_MASK);
-    index[p_id].adjacency_set = (uint64_t) nullptr ;
-    index[p_id].size = 0;
+    assert((uint64_t)index[p_id].adjacency_set.pointers[0] & VERTEX_NOT_USED_MASK);
+    index[p_id].adjacency_set.pointers[0] = (void*) nullptr ;
+    index[p_id].adjacency_set.sizes[0] = 0;
 
     // Update logical mapping
     assert(physical_to_logical[p_id] & VERTEX_NOT_USED_MASK);
@@ -118,8 +118,8 @@ void VertexIndex::rollback_vertex_insert(vertex_id_t v) {
   l_t_p_table::accessor a;
   if (!logical_to_physical.find(a, v)) {
     auto p_id = a->second;
-    index[v].adjacency_set = (0ul | VERTEX_NOT_USED_MASK);
-    index[v].size = (0ul | VERTEX_NOT_USED_MASK);
+    index[v].adjacency_set.pointers[0] = (void*)(0ul | VERTEX_NOT_USED_MASK);
+    index[v].adjacency_set.sizes[0] = (0ul | VERTEX_NOT_USED_MASK);
     physical_to_logical[p_id] = 0l | VERTEX_NOT_USED_MASK;
     logical_to_physical.erase(a);
     free_list.push(p_id);

@@ -17,18 +17,11 @@
   __label__ end_label_name;                                                                              \
   VersionedBlockedEdgeIterator _iter = tx.neighbourhood_blocked_p(src); \
   while (_iter.has_next_block()) {             \
-    auto [_versioned, _bs, _be] = _iter.next_block();                   \
-    if (_versioned) {                          \
-       while (_iter.has_next_edge()) {         \
-         [[maybe_unused]] auto edge_name = _iter.next();                \
-         on_edge\
-       }                                           \
-    } else {                                   \
-      for (auto _i = _bs; _i < _be; _i++) {     \
-        auto edge_name = *_i;                          \
-        on_edge\
-      }                                           \
-    }\
+    auto [_bs, _be] = _iter.next_block(); \                                    
+    for(auto _i = _bs; _i < _be; _i++) {     \
+      auto edge_name = *_i;                          \
+      on_edge\
+    } \                                           
   }                                            \
   [[maybe_unused]] end_label_name: ; \
 }
@@ -41,8 +34,8 @@ class VersioningBlockedSkipListAdjacencyList;
 
 class VersionedBlockedEdgeIterator {
 public:
-    VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, dst_t* block, size_t size, bool versioned, version_t version);
-    VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, VSkipListHeader* block, bool versioned, version_t version);
+    VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, dst_t* block, size_t size, version_t version);
+    VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, VSkipListHeader* block, version_t version);
 
     VersionedBlockedEdgeIterator(VersionedBlockedEdgeIterator& other) = delete;
     VersionedBlockedEdgeIterator& operator=(const VersionedBlockedEdgeIterator&) = delete;
@@ -59,7 +52,7 @@ public:
      *
      * @return <is_versioned, start, end>
      */
-    tuple<bool, dst_t*, dst_t*> next_block();
+    tuple<dst_t*, dst_t*> next_block();
 
     /**
      *

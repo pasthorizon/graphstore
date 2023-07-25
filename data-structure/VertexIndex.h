@@ -24,6 +24,8 @@
 #include "utils/pointerTagging.h"
 #include "third-party/RWSpinLock.h"
 
+#include "AccessPointers.h"
+
 using namespace std;
 
 // The mask indicating if a size entry in the index is versioned.
@@ -66,18 +68,17 @@ struct VertexVersionChainEntry;
 //};
 
 struct VertexEntry {
-    uint64_t adjacency_set;
-    uint64_t size;
+    AllInlineAccessPointersWithSize adjacency_set;
+    //need to store a copy list
     RWSpinLock lock {};
+    int x;
 
     VertexEntry() {
-      adjacency_set = 0ul | VERTEX_NOT_USED_MASK;
-      size = 0ul | VERTEX_NOT_USED_MASK;
+        
     }
 
     VertexEntry(const VertexEntry& other) {
-      adjacency_set = other.adjacency_set;
-      size = other.size;
+      
     }
 };
 
@@ -123,47 +124,71 @@ public:
 
     void rollback_vertex_insert(vertex_id_t v);
 
-    // TODO rename this should be get neighbourhood pointer. it is not raw. It does not include the set type
-    inline void* raw_neighbourhood_version(vertex_id_t v, version_t version) {
-      return (void *) get_pointer(index[v].adjacency_set);
+    
+
+    inline version_t get_latest_version(vertex_id_t v, version_t version){
+      return index[v].adjacency_set.get_latest_version();
+    }
+
+    inline void create_new_version(vertex_id_t v, version_t version, version_t min_active_version){
+      void *latest_pointer = index[v].adjacency_set.get_latest_pointer();
+      index[v].adjacency_set.add_new_pointer(latest_pointer, version, min_active_version);
+      return;
+    }
+
+    inline void* neighbourhood_version(vertex_id_t v, version_t version) {
+      return (void *) ((uint64_t)index[v].adjacency_set.get_pointer(version) & (~EDGE_SET_TYPE_MASK));
     };
 
     inline VAdjacencySetType get_adjacency_set_type(vertex_id_t v, version_t version) {
-      if (index[v].adjacency_set & EDGE_SET_TYPE_MASK) {
+      if ((uint64_t)index[v].adjacency_set.get_pointer(version) & EDGE_SET_TYPE_MASK) {
         return VSINGLE_BLOCK;
       } else {
         return VSKIP_LIST;
       }
     };
 
-    inline void store_single_block(vertex_id_t v, dst_t* block, uint64_t capacity, uint64_t size, uint64_t property_count, bool versioned) {
-      index[v].adjacency_set = (uint64_t) block | EDGE_SET_TYPE_MASK;
-      set_block_size(v, capacity, size, property_count, versioned);
+    inline void store_single_block(vertex_id_t v, dst_t* block, uint64_t capacity, uint64_t size, version_t version, version_t min_active=0){
+
+      assert(index[v].adjacency_set.get_latest_version()==version);
+      index[v].adjacency_set.pointers[0] = (void*)((uint64_t) block | EDGE_SET_TYPE_MASK);
+      set_block_size(v, capacity, size, version);
     }
 
-    inline bool size_is_versioned(vertex_id_t v) {
-      return index[v].size & SIZE_VERSION_MASK;
+    //DONT NEED THIS ONE
+    // inline bool size_is_versioned(vertex_id_t v) {
+    //   return index[v].size & SIZE_VERSION_MASK;
+    // };
+
+
+    inline tuple<uint64_t, version_t> get_version_size(vertex_id_t v, version_t version){
+      return index[v].adjacency_set.get_size(version);
+    }
+
+    inline tuple<uint64_t, uint64_t, uint64_t> get_single_block_size(vertex_id_t v, version_t version) {
+      assert(get_adjacency_set_type(v, version) == VSINGLE_BLOCK);
+      auto [size, curr_version] = get_version_size(v, version);
+      return {size & 0x00000000FFFFFFFF, (size & 0xFFFFFFFF00000000) >> 32, curr_version};
     };
 
-    inline tuple<uint64_t, uint64_t, uint64_t, bool> get_block_size(vertex_id_t v) {
-      assert(get_adjacency_set_type(v, FIRST_VERSION) == VSINGLE_BLOCK);
-      return {index[v].size & 0x000000000000FFFF, (index[v].size & 0x00000000FFFF0000) >> 16, (index[v].size & 0x0000FFFF00000000) >> 32 , index[v].size & SIZE_VERSION_MASK};
-    };
-
-    inline void set_block_size(vertex_id_t v, uint64_t capacity, uint64_t size, uint64_t property_count, bool versioned) {
+    inline void set_block_size(vertex_id_t v, uint64_t capacity, uint64_t size, version_t version) {
       assert(capacity < pow(2, 16));
       assert(size < pow(2, 16));
-      assert(property_count < pow(2, 16));
-      assert(get_adjacency_set_type(v, FIRST_VERSION) == VSINGLE_BLOCK);
-      index[v].size = ((((uint64_t) versioned) << SIZE_VERSION_OFFSET) | (property_count << 32) | size << 16 | capacity);
+      assert(get_adjacency_set_type(v, version) == VSINGLE_BLOCK);
+      // std::cout<<size<<std::endl;
+      size = (size << 32 | capacity);
+      index[v].adjacency_set.sizes[0] = size;
+      // std::cout<<"finally size "<<index[v].adjacency_set.sizes[0]<<std::endl;
     }
 
-    inline void* raw_neighbourhood_size_entry(vertex_id_t v) {
-      return (void*) index[v].size;
-    };
+    //DO NOT NEED THIS ONE
+    // inline void* raw_neighbourhood_size_entry(vertex_id_t v) {
+    //   return (void*) index[v].size;
+    // };
+
 
     bool has_vertex_version_p(vertex_id_t v, version_t version) {
-      return !(index[v].adjacency_set & VERTEX_NOT_USED_MASK);
+      return !((uint64_t)index[v].adjacency_set.pointers[0] & VERTEX_NOT_USED_MASK);
     };
 
 

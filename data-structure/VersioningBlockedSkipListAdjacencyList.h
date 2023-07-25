@@ -19,6 +19,8 @@
 #include "VertexIndex.h"
 #include "EdgeBlock.h"
 
+#include "FreeList.h"
+
 enum AdjacencySetType {
     SKIP_LIST,
     SINGLE_BLOCK
@@ -75,6 +77,9 @@ public:
     void release_vertex_lock_shared_p(vertex_id_t v) override;
 
     void report_storage_size() override;
+    
+    VSkipListHeader* get_latest_next_pointer(VSkipListHeader *pHeader, uint16_t level, version_t version);
+
 
     /**
      * Bulkload data from a CSR. Does not write any versions. Only to be used with an empty data structure.
@@ -89,6 +94,9 @@ public:
     thread_local static int gced_edges;
     thread_local static int gc_merges;
     thread_local static int gc_to_single_block;
+
+    thread_local static FreeList local_free_list;
+    static FreeList global_free_list;
 
     void rollback_vertex_insert(vertex_id_t v) override;
 protected:
@@ -119,7 +127,7 @@ protected:
 private:
     TransactionManager& tm;
     VertexIndex adjacency_index;
-
+    
     size_t block_size;
     size_t property_size;
     const float bulk_load_fill_rate = 1.0;
@@ -136,13 +144,17 @@ private:
 
     size_t get_height();
 
-    VSkipListHeader* find_block(VSkipListHeader *pHeader, dst_t element, VSkipListHeader* blocks[SKIP_LIST_LEVELS]);
-    VSkipListHeader* find_block1(VSkipListHeader *pHeader, dst_t element);
+
+    void add_new_pointer(VSkipListHeader *pHeader, uint16_t level, VSkipListHeader *pointer, version_t version);
+    VSkipListHeader* copy_skip_list_block(dst_t src, VSkipListHeader *block, VSkipListHeader *blocks_per_level[SKIP_LIST_LEVELS], version_t version);
+
+    VSkipListHeader* find_block(VSkipListHeader *pHeader, version_t version, dst_t element, VSkipListHeader* blocks[SKIP_LIST_LEVELS]);
+    VSkipListHeader* find_block1(VSkipListHeader *pHeader, version_t version, dst_t element);
 
     size_t skip_list_header_size() const;
     dst_t* get_data_pointer(VSkipListHeader* header) const;
 
-    dst_t* find_upper_bound(dst_t* start, dst_t* end, dst_t value);
+    dst_t* find_upper_bound(dst_t* start, uint16_t size, dst_t value);
 
     EdgeBlock new_single_edge_block(size_t min_capicity_in_edges);
     VSkipListHeader* new_skip_list_block();
@@ -151,7 +163,7 @@ private:
     void insert_single_block(edge_t edge, version_t version, char* properties);
     void insert_skip_list(edge_t edge, version_t version, char* properties);
 
-    bool size_is_versioned(vertex_id_t v);
+    // bool size_is_versioned(vertex_id_t v);
 
     void update_adjacency_size(vertex_id_t v, bool deletion, version_t version);
     forward_list<SizeVersionChainEntry>* construct_version_chain_from_block(vertex_id_t v, version_t version);
@@ -173,7 +185,7 @@ private:
      * @param block Block to remove
      * @param head head of the skiplist the blocks belongs to.
      */
-    void merge_skip_list_blocks(VSkipListHeader* block, VSkipListHeader* head, vertex_id_t src);
+    void merge_skip_list_blocks(VSkipListHeader* block, VSkipListHeader* head, vertex_id_t src, version_t version);
 
     /**
      * Converts a SkipList adjacency list with only one block back into a single block.
@@ -185,7 +197,7 @@ private:
      * @param v vertex id for which to convert the adjacency set.
      * @param contains_versions if the block still contains any versions.
      */
-    void skip_list_to_single_block(vertex_id_t v, bool contains_versions);
+    void skip_list_to_single_block(vertex_id_t v, version_t versions);
 
     void assert_adjacency_list_consistency(vertex_id_t v, version_t min_version, version_t current_version);
     size_t assert_edge_block_consistency(EdgeBlock eb, vertex_id_t src, version_t version);
@@ -212,7 +224,7 @@ private:
      *
      * If the number of edges in this block and its neighbours are less than the threshold it merges the block.
      */
-    void balance_block(VSkipListHeader* block, VSkipListHeader* head, vertex_id_t src);
+    void balance_block(VSkipListHeader* block, VSkipListHeader* head, vertex_id_t src, version_t version);
 
     bool delete_from_single_block(edge_t edge, version_t version);
 

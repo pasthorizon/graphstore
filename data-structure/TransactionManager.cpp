@@ -8,6 +8,7 @@
 thread_local size_t TransactionManager::thread_id = 0;
 
 SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface* ti, bool write_only) {
+  
   return SnapshotTransaction(this, write_only, ti);
 }
 

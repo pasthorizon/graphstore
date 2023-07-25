@@ -8,30 +8,31 @@
 
 VersionedBlockedPropertyEdgeIterator::VersionedBlockedPropertyEdgeIterator(VersioningBlockedSkipListAdjacencyList *ds,
                                                                            vertex_id_t v, dst_t *block, size_t size,
-                                                                           bool versioned, version_t version,
+                                                                           version_t version,
                                                                            size_t property_size,
-                                                                           weight_t* property_column,
-                                                                           weight_t* properties_end)
-        : VersionedBlockedEdgeIterator(ds, v, block, size, versioned, version), property_size(property_size),
-          block_size(0), n_block(nullptr), property_column(property_column), properties_end(properties_end) {
+                                                                           weight_t* property_column)
+        : VersionedBlockedEdgeIterator(ds, v, block, size, version), property_size(property_size),
+          block_size(0), n_block(nullptr), property_column(property_column), version(version) {
 }
 
 VersionedBlockedPropertyEdgeIterator::VersionedBlockedPropertyEdgeIterator(VersioningBlockedSkipListAdjacencyList *ds,
                                                                            vertex_id_t v, VSkipListHeader *block,
                                                                            size_t block_size,
-                                                                           bool versioned, version_t version,
+                                                                           version_t version,
                                                                            size_t property_size)
-        : VersionedBlockedEdgeIterator(ds, v, block, versioned, version), property_size(property_size),
-          block_size(block_size),
-          n_block(block->next_levels[0]) {
+        : VersionedBlockedEdgeIterator(ds, v, block, version), property_size(property_size),
+          block_size(block_size), version(version)
+           {
   auto eb = EdgeBlock::from_vskip_list_header(block, block_size, property_size);
   property_column = (weight_t*) eb.properties_start();
   properties_end = (weight_t*) eb.properties_end() + 1;
+
+  n_block = (VSkipListHeader*)block->next_levels[0]->get_pointer(version);
 }
 
-tuple<bool, dst_t *, dst_t *, weight_t *, weight_t *>
+tuple<dst_t *, dst_t *, weight_t *, weight_t *>
 VersionedBlockedPropertyEdgeIterator::next_block_with_properties() {
-  auto [versioned, e_b, e_e] = VersionedBlockedEdgeIterator::next_block();
+  auto [e_b, e_e] = VersionedBlockedEdgeIterator::next_block();
   assert(property_column != nullptr);
 
   if (!first_block) {
@@ -39,7 +40,7 @@ VersionedBlockedPropertyEdgeIterator::next_block_with_properties() {
       auto eb = EdgeBlock::from_vskip_list_header(n_block, block_size, property_size);
       property_column = (weight_t *) eb.properties_start();
       properties_end = (weight_t *) eb.properties_end();
-      n_block = n_block->next_levels[0];
+      n_block = (VSkipListHeader*) n_block->next_levels[0]->get_pointer(version);
     } else {
       property_column = nullptr;
       properties_end = nullptr;
@@ -47,7 +48,7 @@ VersionedBlockedPropertyEdgeIterator::next_block_with_properties() {
   } else {
     first_block = false;
   }
-  return make_tuple(versioned, e_b, e_e, property_column, properties_end);
+  return make_tuple(e_b, e_e, property_column, properties_end);
 }
 
 pair<dst_t, weight_t> VersionedBlockedPropertyEdgeIterator::next_with_properties() {

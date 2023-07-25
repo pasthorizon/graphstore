@@ -3,6 +3,7 @@
 //
 
 #include "VersionedTopologyInterface.h"
+#include<iostream>
 
 VersionedTopologyInterface::~VersionedTopologyInterface() {
 

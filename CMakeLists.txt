@@ -41,10 +41,12 @@ set(SRC
         data-structure/IllegalOperation.cpp data-structure/IllegalOperation.h
         data-structure/Transaction.cpp data-structure/Transaction.h
         data-structure/SnapshotTransaction.cpp data-structure/SnapshotTransaction.h
-        data-structure/TransactionManager.cpp data-structure/TransactionManager.h
+	data-structure/AccessPointers.cpp data-structure/AccessPointers.cpp
+	data-structure/FreeList.h data-structure/FreeList.cpp
+	data-structure/TransactionManager.cpp data-structure/TransactionManager.h
         data-structure/VertexExistsPrecondition.cpp data-structure/VertexExistsPrecondition.h
         data-structure/EdgeDoesNotExistsPrecondition.cpp data-structure/EdgeDoesNotExistsPrecondition.h
-        algorithms/GAPBSAlgorithms.cpp algorithms/GAPBSAlgorithms.h
+	algorithms/GAPBSAlgorithms.cpp algorithms/GAPBSAlgorithms.h
         third-party/gapbs.h
         data-structure/VertexIndex.cpp
         data-structure/VertexIndex.h utils/pointerTagging.h

@@ -7,6 +7,7 @@
 
 #define SKIP_LIST_LEVELS 6
 
+#include "AccessPointers.h"
 /**
  * The types of adjacency sets used.
  */
@@ -18,13 +19,14 @@ enum VAdjacencySetType {
 struct VSkipListHeader {
     VSkipListHeader *before;  // TODO remove
     dst_t *data;
+    uint16_t height;
     uint16_t size;  // Number of destinations stored in this block.
-    uint16_t properties;
     dst_t max;
-    VSkipListHeader *next_levels[SKIP_LIST_LEVELS];  // a fixed number of pointers for all levels.
-
+    AccessPointers *next_levels[SKIP_LIST_LEVELS];
+    version_t version;
+    
     char* property_start(size_t block_size, size_t property_size) {
-      return (char*) data + block_size * sizeof(dst_t) + block_size * property_size - properties * property_size;
+      return (char*) data + block_size * sizeof(dst_t) + block_size * sizeof(weight_t);
     }
 };
 

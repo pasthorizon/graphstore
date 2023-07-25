@@ -8,12 +8,12 @@
 
 #include <utils/NotImplemented.h>
 
-VersionedBlockedEdgeIterator::VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v,dst_t *block, size_t size, bool versioned, version_t version)
-        : ds(ds), src(v), block(block), current_block_end(block + size), current_block_is_versioned(versioned), version(version), data(block) {
+VersionedBlockedEdgeIterator::VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v,dst_t *block, size_t size, version_t version)
+        : ds(ds), src(v), block(block), current_block_end(block + size), version(version), data(block) {
   open();
 }
 
-VersionedBlockedEdgeIterator::VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, VSkipListHeader *block, bool versioned, version_t version)
+VersionedBlockedEdgeIterator::VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, VSkipListHeader *block, version_t version)
     : ds(ds), src(v), version(version) {
   if (block == nullptr) {
     n_block = nullptr;
@@ -22,10 +22,9 @@ VersionedBlockedEdgeIterator::VersionedBlockedEdgeIterator(VersioningBlockedSkip
     current_block_is_versioned = false;
     data = nullptr;
   } else {
-    n_block = block->next_levels[0];
+    n_block = ds->get_latest_next_pointer(block, 0,version);
     this->block = block->data;
     current_block_end = block->data + block->size;
-    current_block_is_versioned = versioned;  // TODO could be handled on a per block basis if Skiplistheaders had information on this.
     data = block->data;
   }
   open();
@@ -38,7 +37,7 @@ bool VersionedBlockedEdgeIterator::has_next_block() {
   } else if (n_block != nullptr) {
     block = n_block->data;
     current_block_end = block + n_block->size;
-    n_block = n_block->next_levels[0];
+    n_block = ds->get_latest_next_pointer(n_block,0,version);
 
     data = block;
     return true;
@@ -46,8 +45,8 @@ bool VersionedBlockedEdgeIterator::has_next_block() {
   return false;
 }
 
-tuple<bool, dst_t *, dst_t*> VersionedBlockedEdgeIterator::next_block() {
-  return make_tuple(current_block_is_versioned, block, current_block_end);
+tuple<dst_t *, dst_t*> VersionedBlockedEdgeIterator::next_block() {
+  return make_tuple(block, current_block_end);
 }
 
 VersionedBlockedEdgeIterator::~VersionedBlockedEdgeIterator() {
@@ -74,21 +73,8 @@ bool VersionedBlockedEdgeIterator::has_next_edge() {
 
 bool VersionedBlockedEdgeIterator::move_to_next_edge_in_current_block() {
   while (data < current_block_end) {
-    if (is_versioned(*data)) {
-      const EdgeVersionRecord vr {make_unversioned(*data), data + 1, nullptr, false, 0};
-      bool exists = vr.exists_in_version(version);
-      if (exists) {
-        current_edge = make_unversioned(*data);
-        data += 2;
-        return true;
-      } else {
-        data += 2;
-      }
-    } else {
-      current_edge = *data;
-      data += 1;
-      return true;
-    }
+    current_edge = *data;
+    data+=1;
   }
   return false;
 }

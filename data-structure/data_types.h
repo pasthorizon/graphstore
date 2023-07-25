@@ -17,6 +17,8 @@
 
 using namespace std;
 
+  #define EXTRA_POINTERS 2
+  #define MAX_EPOCHS 2
 //#ifdef BITS64
 // Used vertex identifier and destination data structure for all data structrues.
   typedef uint64_t vertex_id_t;
@@ -60,7 +62,8 @@ using namespace std;
 #define make_versioned(e) (e | VERSION_MASK)
 #define make_unversioned(e) (e & ~VERSION_MASK)
 #define is_versioned(e) (e & VERSION_MASK)
-
+#define is_deletion(e) (e & DELETION_MASK)
+#define END_OF_PROPERTY '\0'
 //bool is_versioned(dst_t e);
 //
 //dst_t make_versioned(dst_t e);
@@ -69,7 +72,7 @@ using namespace std;
 
 bool more_versions_existing(version_t v);
 
-bool is_deletion(version_t v);
+// bool is_deletion(version_t v);
 
 version_t timestamp(version_t v);
 

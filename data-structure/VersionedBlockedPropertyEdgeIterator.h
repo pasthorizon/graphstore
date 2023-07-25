@@ -11,13 +11,8 @@
   __label__ end_label_name;                                                                              \
   VersionedBlockedPropertyEdgeIterator _iter = tx.neighbourhood_with_properties_blocked_p(src); \
   while (_iter.has_next_block()) {             \
-    auto [_versioned, _bs, _be, _ws, _we] = _iter.next_block_with_properties();                   \
-    if (_versioned) {                          \
-       while (_iter.has_next_edge()) {         \
-         [[maybe_unused]] auto [edge_name, properties_name] = _iter.next_with_properties();                \
-         on_edge\
-       }                                           \
-    } else {                                                                                                     \
+    auto [_bs, _be, _ws, _we] = _iter.next_block_with_properties();                   \
+                                                                                                        \
       auto _p = _ws;                                                                                              \
       for (auto _i = _bs; _i < _be; _i++) {     \
         auto edge_name = *_i;                                                                                    \
@@ -25,7 +20,6 @@
         _p++;                                                                                                         \
         on_edge\
       }                                           \
-    }\
   }                                            \
   [[maybe_unused]] end_label_name: ; \
 }
@@ -36,11 +30,11 @@
 class VersionedBlockedPropertyEdgeIterator : public VersionedBlockedEdgeIterator {
 public:
     VersionedBlockedPropertyEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, dst_t* block,
-                                         size_t size, bool versioned, version_t version, size_t property_size,
-                                         weight_t* property_column, weight_t* properties_end  );
+                                         size_t size, version_t version, size_t property_size,
+                                         weight_t* property_column);
 
     VersionedBlockedPropertyEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v,
-                                         VSkipListHeader* block, size_t block_size, bool versioned, version_t version,
+                                         VSkipListHeader* block, size_t block_size, version_t version,
                                          size_t property_size);
 
     /**
@@ -53,7 +47,7 @@ public:
      *
      * @return <is_versioned, start, end, weigths_start, weights_end>
      */
-    tuple<bool, dst_t*, dst_t*, weight_t*, weight_t*> next_block_with_properties();
+    tuple<dst_t*, dst_t*, weight_t*, weight_t*> next_block_with_properties();
 
     /**
      *
@@ -67,6 +61,7 @@ private:
     const size_t block_size;
 
     bool first_block = true;
+    version_t version;
 
     VSkipListHeader* n_block = nullptr;
 
