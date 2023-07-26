@@ -56,7 +56,6 @@ public:
       weights = (weight_t*)((char *)start + capacity*sizeof(dst_t));
       properties =  (char*)weights + capacity*sizeof(weight_t);
       
-      std::cout<<"num edges: "<<edges<<std::endl;
       // std::cout<<"number of bytes for edges: "<<(char*)weights - (char*)start<<std::endl;
       // std::cout<<"number of bytes for weights: "<<(char*)properties - (char*)weights<<std::endl;
 
@@ -84,10 +83,10 @@ public:
 
     bool get_weight(dst_t e, char* out) {
 
-      std::cout<<"edges: ";
-      for(int i=0;i<edges;i++)
-      std::cout<<*(start+i)<<" ";
-      std::cout<<std::endl;
+      // std::cout<<"edges: ";
+      // for(int i=0;i<edges;i++)
+      // std::cout<<*(start+i)<<" ";
+      // std::cout<<std::endl;
 
       dst_t *pos = find_upper_bound(start, edges, e);
 
@@ -97,11 +96,11 @@ public:
       {
         if(!is_deletion(*(pos)))
         {
-          std::cout<<"edge found at position: "<<(pos-start)<<std::endl;
+          // std::cout<<"edge found at position: "<<(pos-start)<<std::endl;
           int ind = pos-start;
-          for(int i=0;i<property_size;i++)
-          std::cout<<(int)(*(properties_start() + ind+i))<<" ";
-          std::cout<<std::endl;
+          // for(int i=0;i<property_size;i++)
+          // std::cout<<(int)(*(properties_start() + ind+i))<<" ";
+          // std::cout<<std::endl;
           memcpy(out, properties_start() + ind*property_size, property_size);
           return true;
         }
@@ -244,9 +243,9 @@ public:
       memcpy(other.start, start + split, (edges - split) * sizeof(dst_t));
 
       // Copy properties into new block.
-      memcpy(other.properties_start(), properties, (edges - split)* property_size);
+      memcpy(other.properties_start(), properties + split*property_size, (edges - split)* property_size);
       // Copy weights into new block
-      memmove(other.weights_start(), weights, (edges - split) * sizeof(weight_t));
+      memmove(other.weights_start(), weights + split, (edges - split) * sizeof(weight_t));
 
       other.edges = edges - split;
       edges = split;
@@ -373,7 +372,7 @@ public:
     }
 
     dst_t get_max_edge() {
-      return *(start + edges);
+      return *(start + edges - 1);
     }
 
     dst_t get_min_edge() {
@@ -384,6 +383,10 @@ public:
     //to be looked into
     void update_skip_list_header(VSkipListHeader *h) {
       h->size = edges;
+      dst_t max=0;
+      for(int i=0;i<edges;i++)
+      if(*(start+i)>max) max=*(start+i);
+      // std::cout<<"actual max = "<<max<<" max returned: "<<get_max_edge()<<std::endl;
       h->max = get_max_edge();
     }
 

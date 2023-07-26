@@ -77,7 +77,6 @@ tuple<uint64_t,version_t> AllInlineAccessPointersWithSize::get_size(version_t ve
     for(int i=0;i<MAX_EPOCHS;i++)
     if(versions[i].load()>=versions[ans].load() && versions[i].load()<=version)
         ans = i;
-    std::cout<<ans<<" "<<sizes[ans]<<" "<<versions[ans].load()<<std::endl;
     return {sizes[ans], versions[ans].load()};
 }
 
