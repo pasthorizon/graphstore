@@ -327,10 +327,7 @@ size_t SnapshotTransaction::max_physical_vertex() {
 }
 
 bool SnapshotTransaction::insert_edge(edge_t edge, char *properties, size_t property_size) {
-  std::cout<<"property for edge "<<edge.src<<" "<<edge.dst<<" :";
-  for(int i=0;i<property_size;i++)
-  std::cout<<(int)(*(properties+i))<<" ";
-  std::cout<<std::endl;
+  
   locks_to_aquire.push_back(edge.src);
   edges_to_insert.emplace_back(edge, properties, property_size);
   return false;

@@ -122,7 +122,7 @@ public:
       
       assert(has_space_to_insert_edge());
       auto pos = find_upper_bound(start, edges, e);
-      std::cout<<"Edge being inserted at position: "<<(pos-start)<<std::endl;
+      // std::cout<<"Edge being inserted at position: "<<(pos-start)<<std::endl;
       if (pos == start + edges) {  // No version of this edge exists.
         *pos = e;
         *(weights+edges) = weight;
@@ -160,12 +160,17 @@ public:
         return false;
       } 
       else{
-        int new_pos = ptr - start;
-        memmove(start + new_pos, start + new_pos + 1, (edges-new_pos-1)*sizeof(dst_t));
-        memmove(weights + new_pos, weights + new_pos + 1, (edges-new_pos-1)*sizeof(weight_t));
-        memmove(properties + new_pos*property_size, properties + (new_pos + 1)*property_size, (edges-new_pos-1)*property_size);
+
+        if(edges>1){
+            int new_pos = ptr - start;
+            memmove(start + new_pos, start + new_pos + 1, (edges-new_pos-1)*sizeof(dst_t));
+            memmove(weights + new_pos, weights + new_pos + 1, (edges-new_pos-1)*sizeof(weight_t));
+            memmove(properties + new_pos*property_size, properties + (new_pos + 1)*property_size, (edges-new_pos-1)*property_size);
+        }
+        // else{ std::cout<<"didnt delete edge"<<std::endl;}
       }
       edges-=1;
+      return true;
     }
 
     /**
@@ -408,6 +413,10 @@ public:
     dst_t *start;
 
     void print_block(function<dst_t(dst_t)> physical_to_logical) {
+      if(edges==0){
+        cout<<"\n***Block Empty***\n";
+        return;
+      }
       cout << "Physical Edges: " << endl;
       for (auto i = start; i < start + edges; i++) {
         cout << *i <<" ";

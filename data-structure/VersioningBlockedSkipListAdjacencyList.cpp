@@ -444,7 +444,6 @@ void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_version(vertex_i
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::memory_block_size() {
-  std::cout<<"Memory size being used: "<<block_size * sizeof(dst_t) + block_size*sizeof(weight_t) + block_size * property_size + skip_list_header_size() + SKIP_LIST_LEVELS*sizeof(AllInlineAccessPointers)<<std::endl;
   return block_size * sizeof(dst_t) + block_size*sizeof(weight_t) + block_size * property_size + skip_list_header_size() + SKIP_LIST_LEVELS*sizeof(AllInlineAccessPointers);
 }
 
@@ -1046,7 +1045,7 @@ void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHea
     // First, we move all elements out of the block in question.
     if (after->size < before->size) {
       auto eb_after = EdgeBlock::from_vskip_list_header(after, block_size, property_size);
-      if(after->version==version)
+      if(after->version!=version)
       {
         VSkipListHeader *after_parents[SKIP_LIST_LEVELS];
 
@@ -1060,7 +1059,7 @@ void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHea
       eb_after.update_skip_list_header(after);
     } else {
       auto eb_before = EdgeBlock::from_vskip_list_header(before, block_size, property_size);
-      if(before->version==version)
+      if(before->version!=version)
       {
         VSkipListHeader *before_parents[SKIP_LIST_LEVELS];
 
@@ -1083,7 +1082,7 @@ void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHea
     }
     after->before = before;
 
-    free_block(block, memory_block_size());
+    // free_block(block, memory_block_size());
     gc_merges += 1;
   }
 }
@@ -1160,6 +1159,7 @@ size_t VersioningBlockedSkipListAdjacencyList::assert_edge_block_consistency(Edg
       if (p != l_v) {
         auto uv = adjacency_index.logical_id(make_unversioned(e));
         if (uv != p) {
+
           eb.print_block([&index = adjacency_index](dst_t p_id) -> dst_t { return index.logical_id(p_id); });
           cout << "eb: " << eb.start << endl;
         }
@@ -1396,8 +1396,6 @@ VSkipListHeader *VersioningBlockedSkipListAdjacencyList::new_skip_list_block() {
       start = start + sizeof(AllInlineAccessPointers);
   }
 
-
-
   std::cout<<"Successfully initialised:"<<((char*)start-(char*)h->data)<<"\n";
   
   return h;
@@ -1502,6 +1500,7 @@ VersioningBlockedSkipListAdjacencyList::balance_block(VSkipListHeader *block, VS
     // TODO maybe version clean the block we balancing again here.
 
     if (balance_against->size + block->size <= block_size) {
+      std::cout<<"\nmerge fails\n"<<std::endl;
       merge_skip_list_blocks(block, head, src, version);
     } else {
       auto balanced = (balance_against->size + block->size) / 2;
@@ -1516,6 +1515,18 @@ VersioningBlockedSkipListAdjacencyList::balance_block(VSkipListHeader *block, VS
 
       auto to = EdgeBlock::from_vskip_list_header(block, block_size, property_size);
       auto from = EdgeBlock::from_vskip_list_header(balance_against, block_size, property_size);
+
+      std::cout<<"\nBlocks before balancing: \n";
+      std::cout<<"Block with less edges: ";
+      for(int i=0;i<to.get_edges();i++)
+      std::cout<<*(to.get_single_block_pointer()+i)<<" ";
+      std::cout<<std::endl;
+
+      std::cout<<"Block balanced against: ";
+      for(int i=0;i<from.get_edges();i++)
+      std::cout<<*(from.get_single_block_pointer()+i)<<" ";
+      std::cout<<std::endl;
+
       if (to.get_max_edge()<from.get_max_edge()) {
         EdgeBlock::move_backward(from, to, to_move);
       } else {
@@ -1538,6 +1549,9 @@ VersioningBlockedSkipListAdjacencyList::balance_block(VSkipListHeader *block, VS
       std::cout<<"max for from block: "<<balance_against->max<<std::endl;
     }
   }
+  else{
+    cout<<"\nNot balancing block\n";
+  }
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::low_skiplist_block_bound() {
@@ -1548,8 +1562,9 @@ size_t VersioningBlockedSkipListAdjacencyList::low_skiplist_block_bound() {
 
 bool VersioningBlockedSkipListAdjacencyList::delete_edge_version(edge_t edge, version_t version) {
   void *adjacency_list = raw_neighbourhood_version(edge.src, version);
-  __builtin_prefetch((void *) ((uint64_t) adjacency_list & ~EDGE_SET_TYPE_MASK));
-  __builtin_prefetch((void *) ((uint64_t) ((dst_t *) adjacency_list + 1) & ~SIZE_VERSION_MASK));
+  std::cout<<"soming here: "<<edge.src<<" "<<edge.dst<<std::endl;
+  // __builtin_prefetch((void *) ((uint64_t) adjacency_list & ~EDGE_SET_TYPE_MASK));
+  // __builtin_prefetch((void *) ((uint64_t) ((dst_t *) adjacency_list + 1) & ~SIZE_VERSION_MASK));
 
   // Insert to empty list
   if (unlikely(adjacency_list == nullptr)) {
@@ -1557,7 +1572,8 @@ bool VersioningBlockedSkipListAdjacencyList::delete_edge_version(edge_t edge, ve
   } else {
     switch (get_set_type(edge.src, version)) {
       case SINGLE_BLOCK: {
-        return delete_from_single_block(edge, version);
+        auto ans = delete_from_single_block(edge, version);
+        return ans;
       }
       case SKIP_LIST: {
         return delete_skip_list(edge, version);
@@ -1567,6 +1583,7 @@ bool VersioningBlockedSkipListAdjacencyList::delete_edge_version(edge_t edge, ve
       }
     }
   }
+  return true;
 }
 
 bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edge, version_t version) {
@@ -1584,7 +1601,9 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
   assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion(), version);
 #endif
   eb.delete_edge(edge.dst);
+  std::cout<<"delete edge operation done"<<std::endl;
   adjacency_index.store_single_block(edge.src, eb.get_single_block_pointer(), block_capacity, size-1, version);
+  std::cout<<"exiting delete_from_single_block"<<std::endl;
   return true;
 }
 
@@ -1604,9 +1623,9 @@ bool VersioningBlockedSkipListAdjacencyList::delete_skip_list(edge_t edge, versi
 // #if COLLECT_VERSIONS_ON_INSERT
 //   eb.gc(tm.getMinActiveVersion(), tm.get_sorted_versions());
 //   eb.update_skip_list_header(block);
-// #if defined(DEBUG) && ASSERT_CONSISTENCY
-//   assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion(), version);
-// #endif
+#if defined(DEBUG) && ASSERT_CONSISTENCY
+  assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion(), version);
+#endif
 // #endif
   {
     bool ret = eb.delete_edge(edge.dst);
@@ -1620,6 +1639,7 @@ bool VersioningBlockedSkipListAdjacencyList::delete_skip_list(edge_t edge, versi
     assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion(), version);
 #endif
     return ret;
+    // return true;
   }
 }
 
@@ -1629,19 +1649,19 @@ bool VersioningBlockedSkipListAdjacencyList::get_weight_version_p(edge_t edge, v
       VSkipListHeader *head = (VSkipListHeader *) raw_neighbourhood_version(edge.src, version);
 
 
-      // while(head!=nullptr){
-      //   if(head ==0 ) break;
-      //   auto x = head->data;
-      //   for(int i=0;i<head->size;i++)
-      //   std::cout<<*(x+i)<<" ";
-      //   std::cout<<std::endl;
-      //   std::cout<<"max for the block: "<<head->max<<" size for the block: "<<head->size<<std::endl<<std::endl;
+      while(head!=nullptr){
+        if(head ==0 ) break;
+        auto x = head->data;
+        for(int i=0;i<head->size;i++)
+        std::cout<<*(x+i)<<" ";
+        std::cout<<std::endl;
+        std::cout<<"max for the block: "<<head->max<<" size for the block: "<<head->size<<std::endl<<std::endl;
 
 
-      //   head = (VSkipListHeader*)head->next_levels[0]->get_latest_pointer();
+        head = (VSkipListHeader*)head->next_levels[0]->get_latest_pointer();
 
-      // }
-      // return false;
+      }
+      return false;
       if (head != nullptr) {
         auto block = find_block1(head, version, edge.dst);
         auto eb = EdgeBlock::from_vskip_list_header(block, block_size, property_size);
