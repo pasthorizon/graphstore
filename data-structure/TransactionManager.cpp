@@ -111,3 +111,13 @@ void TransactionManager::update_sorted_versions() {
 const vector<version_t> &TransactionManager::get_sorted_versions() {
   return sorted_versions;
 }
+
+
+bool TransactionManager::create_epoch(uint64_t version){
+  epoch_number = version;
+  return true;
+}
+
+version_t TransactionManager::get_epoch() const{
+  return epoch_number;
+}

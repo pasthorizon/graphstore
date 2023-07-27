@@ -13,7 +13,7 @@
 SnapshotTransaction::SnapshotTransaction(TransactionManager* tm, bool write_only, VersionedTopologyInterface *ds)
         : tm(tm), write_only(write_only), ds(ds) {
   if (!write_only) {
-    read_version =   45;   //tm->draw_timestamp(false);
+    read_version =   tm->get_epoch();
     if (ds != nullptr) {
       max_physical_vertex_id = ds->max_physical_vertex();
       number_of_vertices = ds->vertex_count_version(read_version);
@@ -24,7 +24,7 @@ SnapshotTransaction::SnapshotTransaction(TransactionManager* tm, bool write_only
 bool SnapshotTransaction::execute() {
   try {
     aquire_locks_and_insert_vertices();
-    commit_version = 45  ;  //tm->draw_timestamp(true);
+    commit_version = tm->get_epoch();
     rewrite_inserted_vertex_timestamps();
 
     assert_preconditions();

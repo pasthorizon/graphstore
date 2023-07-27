@@ -59,6 +59,10 @@ public:
      */
     const vector<version_t>& get_sorted_versions();
 
+    bool create_epoch(uint64_t version);
+
+    version_t get_epoch() const;
+
 private:
     uint max_threads;
     static thread_local size_t thread_id;
@@ -72,6 +76,8 @@ private:
 
     thread min_version_updater;
     atomic<bool> stopped;
+
+    version_t epoch_number;
 
     void run_min_version_updater(uint interval);
 

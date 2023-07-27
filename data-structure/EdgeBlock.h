@@ -341,7 +341,7 @@ public:
       // Move elements from to to from
       memcpy((char*) (to.start + to.edges), (char*) from.start, elements * sizeof(dst_t));
       memcpy((char*) (to.weights_start() + to.edges), (char*) from.weights_start(), elements * sizeof(weight_t));
-      memcpy((char*) (to.properties_start() + to.edges*property_size), (char*) from.start, elements * property_size);
+      memcpy((char*) (to.properties_start() + to.edges*property_size), (char*) from.properties_start(), elements * property_size);
       // Move elements in from backwards
       memmove((char*) from.start, (char*) (from.start + elements), (from.edges - elements) * sizeof(dst_t));
       memmove((char*) from.weights_start(), (char*) (from.weights_start() + elements), (from.edges - elements) * sizeof(weight_t));
