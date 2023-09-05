@@ -5,6 +5,7 @@
 #include "VersioningBlockedSkipListAdjacencyList.h"
 #include "VersionedBlockedEdgeIterator.h"
 #include "EdgeVersionRecord.h"
+#include <iostream>
 
 #include <utils/NotImplemented.h>
 
@@ -33,6 +34,7 @@ VersionedBlockedEdgeIterator::VersionedBlockedEdgeIterator(VersioningBlockedSkip
 bool VersionedBlockedEdgeIterator::has_next_block() {
   if (first_block && block != nullptr) {
     first_block = false;
+    // std::cout<<"yup:"<<*block<<" "<<src<<"\n";
     return true;
   } else if (n_block != nullptr) {
     block = n_block->data;
@@ -59,7 +61,7 @@ void VersionedBlockedEdgeIterator::open() {
 }
 
 void VersionedBlockedEdgeIterator::close() {
-  ds->release_vertex_lock_shared_p(src);
+  // ds->release_vertex_lock_shared_p(src);
   opened = false;
 }
 

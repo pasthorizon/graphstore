@@ -10,6 +10,9 @@
 #include "VersionedBlockedPropertyEdgeIterator.h"
 #include "TransactionManager.h"
 
+std::set<pair<int,int>> SnapshotTransaction::alledges;
+mutex SnapshotTransaction::lock;
+
 SnapshotTransaction::SnapshotTransaction(TransactionManager* tm, bool write_only, VersionedTopologyInterface *ds)
         : tm(tm), write_only(write_only), ds(ds) {
   if (!write_only) {
@@ -26,7 +29,6 @@ bool SnapshotTransaction::execute() {
     aquire_locks_and_insert_vertices();
     commit_version = tm->get_epoch();
     rewrite_inserted_vertex_timestamps();
-
     assert_preconditions();
     assert_std_preconditions();
     for (auto v: vertices_to_delete) {
@@ -41,6 +43,12 @@ bool SnapshotTransaction::execute() {
         continue;
       }
       ds->delete_edge_version(p_edge, commit_version);
+      if(ds->has_edge_version_p(p_edge, commit_version)){
+        cout<<"\nedge found after deletion\n";
+        cout<<p_edge.src<<" "<<p_edge.dst<<endl;
+        ds->has_edge_version_p(p_edge, commit_version, true);
+        throw EdgeExistsException(e);
+      }
     }
 //    auto i = 0;
     for (auto [e, properties, properties_size] : edges_to_insert) {
@@ -52,7 +60,14 @@ bool SnapshotTransaction::execute() {
       if (edge_does_not_exists_semantic_activated && ds->has_edge_version_p(p_edge, commit_version)) {
         continue;
       }
+
+      // 15087 609451
       ds->insert_edge_version(p_edge, commit_version, properties, properties_size);
+
+      if(!ds->has_edge_version_p(p_edge, commit_version)){
+        cout<<"\nedge not found after insertion\n";
+        throw EdgeDoesNotExistsException(e);
+      }
 //        i++;
 //        if (i % 1000 == 0) {
 //        cout << ".";
@@ -66,6 +81,10 @@ bool SnapshotTransaction::execute() {
     for (auto [e, properties, properties_size] : edges_to_update_or_insert) {
       edge_t p_edge (ds->physical_id(e.src), ds->physical_id(e.dst));
       ds->insert_edge_version(p_edge, commit_version, properties, properties_size);
+      if(!ds->has_edge_version_p(p_edge, commit_version)){
+        cout<<"\nedge not found after insertion\n";
+        throw EdgeDoesNotExistsException(e);
+      }
     }
 
 
@@ -96,6 +115,7 @@ void SnapshotTransaction::assert_preconditions() {
   for (auto p: preconditions) {
     p->assert_it(*ds, commit_version);
   }
+
 }
 
 void SnapshotTransaction::aquire_locks_and_insert_vertices() {
@@ -269,7 +289,6 @@ vertex_id_t SnapshotTransaction::logical_id(vertex_id_t v) {
 }
 
 void SnapshotTransaction::assert_std_preconditions() {
-
   // Vertices of each edge to insert need to exists.
   for (auto [e, _, _1] : edges_to_insert) {
     // TODO is that to slow?
@@ -294,6 +313,8 @@ void SnapshotTransaction::assert_std_preconditions() {
     // New edges cannot exist already
     for (auto [e, _, _1] : edges_to_insert) {
       if (ds->has_edge_version(e, commit_version)) {
+        edge_t p_edge(ds->physical_id(e.src), ds->physical_id(e.dst));
+        ds->has_edge_version_p(p_edge, commit_version, true);
         throw EdgeExistsException(e);
       }
     }
@@ -303,6 +324,29 @@ void SnapshotTransaction::assert_std_preconditions() {
 // thread_local int VersioningBlockedSkipListAdjacencyList::gc_to_single_block = 0;
     for (auto e : edges_to_delete) {
       if (!ds->has_edge_version(e, commit_version)) {
+        pair<int,int> tofind = make_pair(ds->physical_id(e.src), ds->physical_id(e.dst));
+        
+
+        cout<<"looking for edge "<<e.src<<" "<<e.dst<<" not found!!"<<endl;
+
+        for(int i=0;i<edges_to_delete.size();i++)
+          cout<<edges_to_delete[i].src<<" "<<edges_to_delete[i].dst<<endl;
+
+        edge_t p_edge (ds->physical_id(e.src), ds->physical_id(e.dst));
+        cout<<"\n\ncommit version "<<commit_version<<endl;
+        ds->has_edge_version_p(p_edge, commit_version, true);
+        cout<<endl<<endl;
+        cout<<"\n\ncommit version "<<commit_version-1<<endl;
+
+        ds->has_edge_version_p(p_edge, commit_version-1, true);
+        cout<<endl<<endl;
+        cout<<"\n\ncommit version "<<commit_version-2<<endl;
+
+        ds->has_edge_version_p(p_edge, commit_version-2, true);
+                cout<<endl<<endl;
+
+
+
         throw EdgeDoesNotExistsException(e);
       }
     }

@@ -18,7 +18,7 @@
 using namespace std;
 
   #define EXTRA_POINTERS 2
-  #define MAX_EPOCHS 2
+  #define MAX_EPOCHS 4
 //#ifdef BITS64
 // Used vertex identifier and destination data structure for all data structrues.
   typedef uint64_t vertex_id_t;

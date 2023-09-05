@@ -10,7 +10,7 @@ class AccessPointers{
         virtual void add_new_pointer(void *pointer, version_t version, version_t minActive=0) = 0;
         virtual void *get_latest_pointer() const = 0;
         virtual version_t get_latest_version() const = 0;
-        virtual void *get_pointer(version_t version) const=0;
+        virtual void *get_pointer(version_t version, bool debug = false) const=0;
         
         // virtual version_t get_version(version_t version) const=0;
 };
@@ -27,7 +27,7 @@ class AllInlineAccessPointers: public AccessPointers{
         virtual void add_new_pointer(void *pointer, version_t version, version_t minActive=0);
         virtual void *get_latest_pointer() const;
         virtual version_t get_latest_version() const;
-        virtual void *get_pointer(version_t version) const;
+        virtual void *get_pointer(version_t version, bool debug=false) const;
         // virtual version_t get_version(version_t version) const;
 };
 

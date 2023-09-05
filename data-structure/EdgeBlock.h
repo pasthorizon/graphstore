@@ -266,6 +266,13 @@ public:
      * If b1[elements] is a versioned edge, it moves one element more to keep edge and version together.
      */
     static void move_forward(EdgeBlock& from, EdgeBlock& to, size_t elements) {
+
+      // vector<int> alledges;
+      // for(int i=0;i<from.edges;i++)
+      //   alledges.push_back(*(from.start+i));
+      // for(int i=0;i<to.edges;i++)
+      //   alledges.push_back(*(to.start+i));
+
       assert(from.edges >= elements);
       assert(from.get_max_edge() < to.get_min_edge());
       assert(to.property_size == from.property_size);
@@ -273,17 +280,6 @@ public:
       auto property_size = to.property_size;
 
       auto elements_not_to_move = from.edges - elements;
-
-//#ifdef DEBUG
-//      vector<dst_t> before;
-//      for (auto i = from.start; i < from.start + from.edges; i++) {
-//        before.emplace_back(*i);
-//      }
-//
-//      for (auto i = to.start; i < to.start + to.edges; i++) {
-//        before.emplace_back(*i);
-//      }
-//#endif
 
       // Move elements in to backwards to make place
       memmove((char*) (to.start + elements), (char*) to.start, to.edges * sizeof(dst_t));
@@ -299,38 +295,29 @@ public:
       from.edges -= elements;
       to.edges += elements;
 
-//#ifdef DEBUG
-//      vector<dst_t> after;
-//      for (auto i = from.start; i < from.start + from.edges; i++) {
-//        after.emplace_back(*i);
-//      }
-//      for (auto i = to.start; i < to.start + to.edges; i++) {
-//        after.emplace_back(*i);
-//      }
-//
-//      bool matching = before == after;
-//      if (!matching) {
-//        cout << from.edges << " " << to.edges << endl;
-//        cout << "Moved " << elements << " elements";
-//        cout << "Content before" << endl;
-//        for (auto i = 0; i < before.size(); i++) {
-//          if (i == elements_not_to_move) {
-//
-//          }
-//          cout << before[i] << " ";
-//        }
-//        cout << endl;
-//        cout << "Content after:" << endl;
-//        for (auto i = 0; i < before.size(); i++) {
-//          cout << after[i] << " ";
-//        }
-//        cout << endl;
-//        assert(false);
-//      }
-//#endif
+      // vector<int> alledges_later;
+      // for(int i=0;i<from.edges;i++)
+      //   alledges_later.push_back(*(from.start+i));
+      // for(int i=0;i<to.edges;i++)
+      //   alledges_later.push_back(*(to.start+i));
+
+      // for(int i=0;i<alledges.size();i++)
+      //   if(alledges[i]!=alledges_later[i])
+      //   {
+      //     cout<<"move forward not working coorectly"<<endl<<endl<<endl;
+      //     exit(0);
+      //   }
     }
 
     static void move_backward(EdgeBlock& from, EdgeBlock& to, size_t elements) {
+
+      // vector<int> alledges;
+      // for(int i=0;i<to.edges;i++)
+      //   alledges.push_back(*(to.start+i));
+      // for(int i=0;i<from.edges;i++)
+      //   alledges.push_back(*(from.start+i));
+
+
       assert(from.edges >= elements);
       assert(from.get_min_edge() > to.get_max_edge());
       assert(to.property_size == from.property_size);
@@ -338,7 +325,7 @@ public:
 
       auto property_size = to.property_size;
 
-      // Move elements from to to from
+      // Move elements from from to to
       memcpy((char*) (to.start + to.edges), (char*) from.start, elements * sizeof(dst_t));
       memcpy((char*) (to.weights_start() + to.edges), (char*) from.weights_start(), elements * sizeof(weight_t));
       memcpy((char*) (to.properties_start() + to.edges*property_size), (char*) from.properties_start(), elements * property_size);
@@ -349,6 +336,19 @@ public:
 
       from.edges -= elements;
       to.edges += elements;
+
+      // vector<int> alledges_later;
+      // for(int i=0;i<to.edges;i++)
+      //   alledges_later.push_back(*(to.start+i));
+      // for(int i=0;i<from.edges;i++)
+      //   alledges_later.push_back(*(from.start+i));
+
+      // for(int i=0;i<alledges.size();i++)
+      //   if(alledges[i]!=alledges_later[i])
+      //   {
+      //     cout<<"move backwards not working coorectly"<<endl<<endl<<endl;
+      //     exit(0);
+      //   }
     }
 
     size_t count_edges() {

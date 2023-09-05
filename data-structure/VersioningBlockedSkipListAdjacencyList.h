@@ -60,7 +60,7 @@ public:
     void intersect_neighbourhood_version(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) override { throw NotImplemented(); };
     void intersect_neighbourhood_version_p(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) override;
 
-    bool has_edge_version_p(edge_t edge, version_t version) override;
+    bool has_edge_version_p(edge_t edge, version_t version, bool debug = false) override;
     bool get_weight_version_p(edge_t edge, version_t version, char* out) override;
 
     bool insert_edge_version(edge_t edge, version_t version) override;
@@ -89,6 +89,7 @@ public:
     size_t get_block_size();
 
     void gc_all() override;
+    static void gc_thread(version_t version);
     void gc_vertex(vertex_id_t v) override;
 
     thread_local static int gced_edges;
@@ -96,7 +97,6 @@ public:
     thread_local static int gc_to_single_block;
 
     thread_local static FreeList local_free_list;
-    static FreeList global_free_list;
 
     void rollback_vertex_insert(vertex_id_t v) override;
 protected:
@@ -215,7 +215,7 @@ private:
     size_t get_single_block_memory_size(size_t capacity);
 
     void* get_block(size_t size);
-    void free_block(void* block, size_t size);
+    static void free_block(void* block, size_t size);
 
     size_t low_skiplist_block_bound();
 

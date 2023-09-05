@@ -43,7 +43,8 @@ void TransactionManager::register_thread(size_t id) {
 
 
 version_t TransactionManager::getMinActiveVersion() {
-  return min_version;
+  version_t ans = epoch_number.load()-1;
+  return ans;
 }
 
 void TransactionManager::update_min_version() {
@@ -114,10 +115,12 @@ const vector<version_t> &TransactionManager::get_sorted_versions() {
 
 
 bool TransactionManager::create_epoch(uint64_t version){
-  epoch_number = version;
+  min_version = version-2;
+  epoch_number.store(version);
   return true;
 }
 
 version_t TransactionManager::get_epoch() const{
-  return epoch_number;
+  version_t ans = epoch_number.load();
+  return ans;
 }

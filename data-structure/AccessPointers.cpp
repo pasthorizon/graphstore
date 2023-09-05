@@ -1,5 +1,7 @@
 #include "AccessPointers.h"
+#include "TopologyInterface.h"
 #include<iostream>
+#include <set>
 AllInlineAccessPointers::AllInlineAccessPointers(){
     for(int i=0;i<MAX_EPOCHS;i++)
     {
@@ -27,11 +29,20 @@ void *AllInlineAccessPointers::get_latest_pointer() const{
     return pointers[0];
 }
 
-void *AllInlineAccessPointers::get_pointer(version_t version) const{
-    int ans=0;
-    for(int i=0;i<MAX_EPOCHS;i++)
-    if(versions[i].load()>=versions[ans].load() && versions[i].load()<=version)
-        ans = i;
+void *AllInlineAccessPointers::get_pointer(version_t version, bool debug) const{
+    // cout<<"not happening here"<<endl<<endl;
+    int ans=0; int diff=1e9;
+    for(int i=0;i<MAX_EPOCHS;i++){
+        if(versions[i].load()<=version && diff > abs((long long)versions[i].load()-(long long)version))
+            ans = i, diff = abs((long long)versions[i].load()-(long long)version);
+        version_t curr = versions[i].load();
+        if(debug)
+            cout<<curr<<" ";
+    }
+    if(debug)
+    cout<<endl;
+    
+
     return pointers[ans];
 }
 
@@ -98,7 +109,6 @@ void  AllInlineAccessPointersWithSize::add_new_pointer(void *pointer, version_t 
 
         pointers[0] = pointer;
         versions[0].store(version);
-
     }
     else pointers[0] = pointer;
 }

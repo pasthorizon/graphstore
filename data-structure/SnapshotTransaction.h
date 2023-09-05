@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 #include <set>
+#include <mutex>
 
 #include "Transaction.h"
 #include "IllegalOperation.h"
@@ -111,6 +112,8 @@ private:
     void assert_preconditions();
     void assert_std_preconditions();
 
+    static std::set<pair<int,int>> alledges;
+    static mutex lock;
 
     TransactionManager* tm;
     bool write_only = false;

@@ -45,7 +45,7 @@ public:
     virtual bool delete_vertex_version(vertex_id_t v, version_t version) = 0;
 
     virtual bool has_edge_version(edge_t edge, version_t version);
-    virtual bool has_edge_version_p(edge_t edge, version_t version) = 0;
+    virtual bool has_edge_version_p(edge_t edge, version_t version, bool debug = false) = 0;
 
     virtual bool get_weight_version(edge_t edge, version_t version, char* out);
     virtual bool get_weight_version_p(edge_t edge, version_t version, char* out) =0;

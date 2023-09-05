@@ -54,7 +54,6 @@ bool VertexIndex::insert_vertex(vertex_id_t id, version_t version) {
 
     // Update vertex count
     vertex_count.fetch_add(1);
-
     return true;
   } else {
     p_id = w->second;

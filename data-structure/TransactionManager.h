@@ -77,7 +77,7 @@ private:
     thread min_version_updater;
     atomic<bool> stopped;
 
-    version_t epoch_number;
+    atomic<version_t> epoch_number;
 
     void run_min_version_updater(uint interval);
 

@@ -78,10 +78,11 @@ namespace { // anonymous
 //          if (s > 240) {
 //            size_over += 1;
 //          }
-          __builtin_prefetch(ds->raw_neighbourhood_version(u+PREFETCH_AHEAD, FIRST_VERSION), 0, 3);
-          __builtin_prefetch((char*) ds->raw_neighbourhood_version(u+PREFETCH_AHEAD+1, FIRST_VERSION), 0, 3);
-          __builtin_prefetch((char*) ds->raw_neighbourhood_version(u+PREFETCH_AHEAD+2, FIRST_VERSION), 0, 3);
-          __builtin_prefetch((char*) ds->raw_neighbourhood_version(u+PREFETCH_AHEAD-1, FIRST_VERSION), 0, 3);
+          version_t version = tx.get_version();
+          __builtin_prefetch(ds->raw_neighbourhood_version(u+PREFETCH_AHEAD, version), 0, 3);
+          __builtin_prefetch((char*) ds->raw_neighbourhood_version(u+PREFETCH_AHEAD+1, version), 0, 3);
+          __builtin_prefetch((char*) ds->raw_neighbourhood_version(u+PREFETCH_AHEAD+2, version), 0, 3);
+          __builtin_prefetch((char*) ds->raw_neighbourhood_version(u+PREFETCH_AHEAD-1, version), 0, 3);
           SORTLEDTON_ITERATE(tx, u, {
 //                  average_steps++;
                   if (front.get_bit(e)) {

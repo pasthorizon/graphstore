@@ -6,6 +6,7 @@
 #define LIVE_GRAPH_TWO_VERSIONEDBLOCKEDEDGEITERATOR_H
 
 #include <optional>
+#include<iostream>
 
 #include <data-structure/data_types.h>
 #include "AdjacencySetTypes.h"
@@ -19,10 +20,10 @@
   while (_iter.has_next_block()) {             \
     auto [_bs, _be] = _iter.next_block(); \                                    
     for(auto _i = _bs; _i < _be; _i++) {     \
-      auto edge_name = *_i;                          \
-      on_edge\
+      auto edge_name = *_i;         \
+      on_edge                         \
     } \                                           
-  }                                            \
+  }      \
   [[maybe_unused]] end_label_name: ; \
 }
 
@@ -92,3 +93,5 @@ private:
 
 
 #endif //LIVE_GRAPH_TWO_VERSIONEDBLOCKEDEDGEITERATOR_H
+
+
