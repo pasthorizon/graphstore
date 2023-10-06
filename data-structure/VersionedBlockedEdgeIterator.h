@@ -11,18 +11,28 @@
 #include <data-structure/data_types.h>
 #include "AdjacencySetTypes.h"
 #include "TransactionManager.h"
-
+#include "VersioningBlockedSkipListAdjacencyList.h"
 // TODO define early stop
 
 #define SORTLEDTON_ITERATE_NAMED(tx, src, edge_name, end_label_name, on_edge) { \
-  __label__ end_label_name;                                                                              \
+  __label__ end_label_name;  \
   VersionedBlockedEdgeIterator _iter = tx.neighbourhood_blocked_p(src); \
   while (_iter.has_next_block()) {             \
-    auto [_bs, _be] = _iter.next_block(); \                                    
+    auto [_bs, _be] = _iter.next_block(); bool flag = false; \                                    
     for(auto _i = _bs; _i < _be; _i++) {     \
-      auto edge_name = *_i;         \
-      on_edge                         \
-    } \                                           
+      auto edge_name = *_i;           \
+      if(edge_name > tx.max_physical_vertex())         \
+      {                 \
+        if(_iter.isasingleblock) {     \
+          cout<<"was a single block "<<src<<" "<<tx.max_physical_vertex()<<endl<<endl<<endl;                                    \
+          auto [capacity, size, curr_version] = _iter.ds->adjacency_index.get_single_block_size(src, _iter.version); \
+          cout<<capacity<<" "<<size<<" "<<curr_version<<" "<<_iter.version<<endl; \
+          _iter.ds->adjacency_index[src].adjacency_set.get_pointer(_iter.version, true);         \ 
+                                                                               \
+        }                               \
+      }           \
+        on_edge                         \
+      } \                                           
   }      \
   [[maybe_unused]] end_label_name: ; \
 }
@@ -31,7 +41,7 @@
 
 
 
-class VersioningBlockedSkipListAdjacencyList;
+// class VersioningBlockedSkipListAdjacencyList;
 
 class VersionedBlockedEdgeIterator {
 public:
@@ -70,17 +80,19 @@ public:
     void open();
     void close();
     bool is_open();
-
+bool isasingleblock;
+VersioningBlockedSkipListAdjacencyList* ds = nullptr;
+version_t  version = NO_TRANSACTION;
 private:
-    VersioningBlockedSkipListAdjacencyList* ds = nullptr;
+    
     vertex_id_t src = 0;
-
+  
     VSkipListHeader* n_block = nullptr;
 
     dst_t* block = nullptr;
     dst_t* current_block_end = 0;
     bool current_block_is_versioned = false;
-    version_t  version = NO_TRANSACTION;
+    
 
     dst_t* data = nullptr;
     dst_t current_edge = 0;

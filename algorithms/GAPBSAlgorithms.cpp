@@ -85,6 +85,11 @@ namespace { // anonymous
           __builtin_prefetch((char*) ds->raw_neighbourhood_version(u+PREFETCH_AHEAD-1, version), 0, 3);
           SORTLEDTON_ITERATE(tx, u, {
 //                  average_steps++;
+                  if(e>tx.max_physical_vertex()){
+                    cout<<e<<" "<<tx.max_physical_vertex()<<endl;
+                    cout<<"finding some rogue edge\n\n"<<endl<<endl;
+                    // exit(0);
+                  }
                   if (front.get_bit(e)) {
                     distances[u] = distance; // on each BUStep, all nodes will have the same distance
                     awake_count++;

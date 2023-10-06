@@ -1,7 +1,10 @@
 #include "AccessPointers.h"
 #include "TopologyInterface.h"
+#include "AdjacencySetTypes.h"
 #include<iostream>
 #include <set>
+ 
+
 AllInlineAccessPointers::AllInlineAccessPointers(){
     for(int i=0;i<MAX_EPOCHS;i++)
     {
@@ -36,18 +39,20 @@ void *AllInlineAccessPointers::get_pointer(version_t version, bool debug) const{
         if(versions[i].load()<=version && diff > abs((long long)versions[i].load()-(long long)version))
             ans = i, diff = abs((long long)versions[i].load()-(long long)version);
         version_t curr = versions[i].load();
-        if(debug)
-            cout<<curr<<" ";
+        
     }
-    if(debug)
-    cout<<endl;
-    
 
+    if(debug){
+        for(int i=0;i<MAX_EPOCHS;i++)
+            cout<<versions[i].load()<<" ";
+        cout<<endl;
+        cout<<"returned: "<<versions[ans].load()<<endl;
+    }
     return pointers[ans];
 }
 
 
-void AllInlineAccessPointers::add_new_pointer(void *pointer, version_t version, version_t minActive){
+void AllInlineAccessPointers::add_new_pointer(void *pointer, version_t version, version_t minActive, int type){
     int toReplace=0;
 
     if(versions[0].load()!=version){
@@ -64,6 +69,7 @@ void AllInlineAccessPointers::add_new_pointer(void *pointer, version_t version, 
 
         pointers[0] = pointer;
         versions[0].store(version);
+
     }
     else pointers[0] = pointer;
 }
@@ -84,14 +90,14 @@ AllInlineAccessPointersWithSize::AllInlineAccessPointersWithSize(const AllInline
 }
 
 tuple<uint64_t,version_t> AllInlineAccessPointersWithSize::get_size(version_t version){
-    int ans=0;
+    int ans=0; long long diff = 1e18;
     for(int i=0;i<MAX_EPOCHS;i++)
-    if(versions[i].load()>=versions[ans].load() && versions[i].load()<=version)
-        ans = i;
+    if(versions[i].load()<=version && diff > abs((long long)versions[i].load()-(long long)version))
+            ans = i, diff = abs((long long)versions[i].load()-(long long)version);
     return {sizes[ans], versions[ans].load()};
 }
 
-void  AllInlineAccessPointersWithSize::add_new_pointer(void *pointer, version_t version, version_t minActive){
+void  AllInlineAccessPointersWithSize::add_new_pointer(void *pointer, version_t version, version_t minActive, int type){
     int toReplace=0;
 
     if(versions[0].load()!=version){
@@ -109,6 +115,8 @@ void  AllInlineAccessPointersWithSize::add_new_pointer(void *pointer, version_t 
 
         pointers[0] = pointer;
         versions[0].store(version);
+
+        
     }
     else pointers[0] = pointer;
 }

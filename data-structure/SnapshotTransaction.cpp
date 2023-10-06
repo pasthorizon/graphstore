@@ -13,10 +13,12 @@
 std::set<pair<int,int>> SnapshotTransaction::alledges;
 mutex SnapshotTransaction::lock;
 
-SnapshotTransaction::SnapshotTransaction(TransactionManager* tm, bool write_only, VersionedTopologyInterface *ds)
+SnapshotTransaction::SnapshotTransaction(TransactionManager* tm, bool write_only, VersionedTopologyInterface *ds, bool analytics)
         : tm(tm), write_only(write_only), ds(ds) {
   if (!write_only) {
     read_version =   tm->get_epoch();
+    if(analytics)
+      read_version--;
     if (ds != nullptr) {
       max_physical_vertex_id = ds->max_physical_vertex();
       number_of_vertices = ds->vertex_count_version(read_version);
@@ -381,6 +383,9 @@ VersionedBlockedEdgeIterator SnapshotTransaction::neighbourhood_blocked_p(vertex
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
   }
+
+  // if(tm->get_epoch()>100)
+  //   cout<<"read version being used "<<read_version<<" current epoch: "<<tm->get_epoch()<<endl<<endl;
   return ds->neighbourhood_version_blocked_p(src, read_version);
 }
 

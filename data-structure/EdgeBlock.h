@@ -55,10 +55,10 @@ public:
       start = start_block;
       weights = (weight_t*)((char *)start + capacity*sizeof(dst_t));
       properties =  (char*)weights + capacity*sizeof(weight_t);
-      
+      end = (char*)properties + _property_size*_capacity;
       // std::cout<<"number of bytes for edges: "<<(char*)weights - (char*)start<<std::endl;
       // std::cout<<"number of bytes for weights: "<<(char*)properties - (char*)weights<<std::endl;
-
+      
     }
               //will the pointer casting be done implicitly??
               //does the memory layout inside the block matter for locality?
@@ -232,7 +232,7 @@ public:
 
     void copy_into(EdgeBlock &other) {
       assert(size() <= other.size());
-
+      assert(capacity<=other.capacity);
       other.set_edges(edges);
       other.set_property_size(property_size);
 
@@ -475,9 +475,9 @@ public:
     * End of the memory region.
     */
     char* end;
-
+  size_t capacity;
 private:
-    size_t capacity;
+    
 
 
 

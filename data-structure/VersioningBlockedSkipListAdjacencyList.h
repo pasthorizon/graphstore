@@ -99,6 +99,8 @@ public:
     thread_local static FreeList local_free_list;
 
     void rollback_vertex_insert(vertex_id_t v) override;
+    VertexIndex adjacency_index;
+
 protected:
     bool gc_block(vertex_id_t v);
     bool gc_skip_list(vertex_id_t v);
@@ -123,10 +125,9 @@ protected:
     bool gc_skip_list_block(VSkipListHeader **to_clean, VSkipListHeader *before,
             VSkipListHeader *after, version_t min_version, VSkipListHeader* blocks[SKIP_LIST_LEVELS],
             int leave_space);
-
 private:
     TransactionManager& tm;
-    VertexIndex adjacency_index;
+    
     
     size_t block_size;
     size_t property_size;
@@ -146,7 +147,7 @@ private:
 
 
     void add_new_pointer(VSkipListHeader *pHeader, uint16_t level, VSkipListHeader *pointer, version_t version);
-    VSkipListHeader* copy_skip_list_block(dst_t src, VSkipListHeader *block, VSkipListHeader *blocks_per_level[SKIP_LIST_LEVELS], version_t version);
+    VSkipListHeader* copy_skip_list_block(dst_t src, VSkipListHeader *block, VSkipListHeader *blocks_per_level[SKIP_LIST_LEVELS], version_t version, int type = 0);
 
     VSkipListHeader* find_block(VSkipListHeader *pHeader, version_t version, dst_t element, VSkipListHeader* blocks[SKIP_LIST_LEVELS]);
     VSkipListHeader* find_block1(VSkipListHeader *pHeader, version_t version, dst_t element);

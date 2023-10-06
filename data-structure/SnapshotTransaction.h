@@ -36,7 +36,7 @@ class TransactionManager;
 
 class SnapshotTransaction : public Transaction {
 public:
-    SnapshotTransaction(TransactionManager* tm, bool write_only, VersionedTopologyInterface* ds);
+    SnapshotTransaction(TransactionManager* tm, bool write_only, VersionedTopologyInterface* ds, bool analytics = false);
     ~SnapshotTransaction();
 
     void use_vertex_does_not_exists_semantics() override;
@@ -95,10 +95,10 @@ public:
     version_t get_version() const override;
     version_t  get_commit_version() const override;
     void set_read_timestamp(version_t timestamp);
-
+    version_t read_version = NO_TRANSACTION;
     void clear(bool write_only);
 protected:
-    version_t read_version = NO_TRANSACTION;
+    
     version_t commit_version = NO_TRANSACTION;
     VersionedTopologyInterface* ds;
 

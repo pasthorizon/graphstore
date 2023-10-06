@@ -11,11 +11,13 @@
 
 VersionedBlockedEdgeIterator::VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v,dst_t *block, size_t size, version_t version)
         : ds(ds), src(v), block(block), current_block_end(block + size), version(version), data(block) {
+          isasingleblock = true;
   open();
 }
 
 VersionedBlockedEdgeIterator::VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, VSkipListHeader *block, version_t version)
     : ds(ds), src(v), version(version) {
+      isasingleblock=false;
   if (block == nullptr) {
     n_block = nullptr;
     this->block = nullptr;
@@ -39,8 +41,8 @@ bool VersionedBlockedEdgeIterator::has_next_block() {
   } else if (n_block != nullptr) {
     block = n_block->data;
     current_block_end = block + n_block->size;
+    
     n_block = ds->get_latest_next_pointer(n_block,0,version);
-
     data = block;
     return true;
   }
