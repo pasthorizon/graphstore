@@ -231,8 +231,9 @@ public:
     };
 
     void copy_into(EdgeBlock &other) {
-      assert(size() <= other.size());
-      assert(capacity<=other.capacity);
+      // assert(size() <= other.size());
+      // assert(capacity<=other.capacity);
+      assert(edges <= other.capacity);
       other.set_edges(edges);
       other.set_property_size(property_size);
 

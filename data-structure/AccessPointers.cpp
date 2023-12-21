@@ -35,6 +35,10 @@ void *AllInlineAccessPointers::get_latest_pointer() const{
 void *AllInlineAccessPointers::get_pointer(version_t version, bool debug) const{
     // cout<<"not happening here"<<endl<<endl;
     int ans=0; int diff=1e9;
+    if(versions[0].load()==version) return pointers[0];
+
+    
+
     for(int i=0;i<MAX_EPOCHS;i++){
         if(versions[i].load()<=version && diff > abs((long long)versions[i].load()-(long long)version))
             ans = i, diff = abs((long long)versions[i].load()-(long long)version);

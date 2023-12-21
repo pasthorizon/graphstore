@@ -3,6 +3,7 @@
 #define LIVE_GRAPH_TWO_FREELIST_H
 
 #include"AdjacencySetTypes.h"
+#include "third-party/RWSpinLock.h"
 #include"data_types.h"
 #include<forward_list>
 #include<mutex>
@@ -18,6 +19,7 @@ typedef struct free_block{
         // cout<<"free_block constructor called\n"<<endl;
         num_elements=0;
         block = (void**) malloc(sizeof(void*)*per_block);
+        for(int i=0;i<512;i++) type[i] = 0;
     }
     free_block(const free_block& other){
         // cout<<"copy contructor called"<<endl;
@@ -39,6 +41,21 @@ typedef struct free_block{
 
 }free_block;
 
+
+typedef struct version_list{
+    // RWSpinLock lock {};
+    RWSpinLock *lock;
+    forward_list<free_block> free_list;
+
+    version_list(){
+        lock = nullptr;
+    }
+
+    ~version_list(){
+    }
+
+}version_list;
+
 class FreeList{
     public:
         
@@ -52,9 +69,9 @@ class FreeList{
             // cout<<"\nFreeList constructor called and "<<last_version<<endl;
         }
 
-        static map<version_t, forward_list<free_block>> free_list;
+        static map<version_t, version_list> free_list;
         static void merge_lists(forward_list<free_block>& other, version_t version);
-
+        static void eraseVersion(version_t version);
     private:
         int per_block;
         version_t last_version;

@@ -81,6 +81,8 @@ public:
 
     virtual void bulkload(const SortedCSRDataSource& src) = 0;
 
+    virtual void createEpoch(version_t version) = 0;
+
     virtual void gc_all() = 0;
     virtual void gc_vertex(vertex_id_t v) = 0;
 

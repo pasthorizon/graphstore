@@ -10,6 +10,7 @@
 #include <random>
 #include <atomic>
 #include <forward_list>
+#include <queue>
 #include <utils/NotImplemented.h>
 #include <data-structure/TransactionManager.h>
 #include <data-structure/SizeVersionChainEntry.h>
@@ -76,6 +77,8 @@ public:
     void aquire_vertex_lock_shared_p(vertex_id_t vertex_lock) override;
     void release_vertex_lock_shared_p(vertex_id_t v) override;
 
+    void createEpoch(version_t version) override;
+
     void report_storage_size() override;
     
     VSkipListHeader* get_latest_next_pointer(VSkipListHeader *pHeader, uint16_t level, version_t version);
@@ -89,7 +92,7 @@ public:
     size_t get_block_size();
 
     void gc_all() override;
-    static void gc_thread(version_t version);
+    static void gc_thread(version_t version, int id);
     void gc_vertex(vertex_id_t v) override;
 
     thread_local static int gced_edges;
@@ -128,6 +131,7 @@ protected:
 private:
     TransactionManager& tm;
     
+    std::queue<version_t> versions;
     
     size_t block_size;
     size_t property_size;
@@ -144,6 +148,8 @@ private:
     size_t memory_block_size();
 
     size_t get_height();
+
+
 
 
     void add_new_pointer(VSkipListHeader *pHeader, uint16_t level, VSkipListHeader *pointer, version_t version);

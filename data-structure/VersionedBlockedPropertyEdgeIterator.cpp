@@ -25,7 +25,7 @@ VersionedBlockedPropertyEdgeIterator::VersionedBlockedPropertyEdgeIterator(Versi
            {
   auto eb = EdgeBlock::from_vskip_list_header(block, block_size, property_size);
   property_column = (weight_t*) eb.properties_start();
-  properties_end = (weight_t*) eb.properties_end() + 1;
+  properties_end = (weight_t*) eb.properties_end();
 
   n_block = (VSkipListHeader*)block->next_levels[0]->get_pointer(version);
 }

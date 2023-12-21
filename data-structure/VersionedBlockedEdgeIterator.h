@@ -21,16 +21,6 @@
     auto [_bs, _be] = _iter.next_block(); bool flag = false; \                                    
     for(auto _i = _bs; _i < _be; _i++) {     \
       auto edge_name = *_i;           \
-      if(edge_name > tx.max_physical_vertex())         \
-      {                 \
-        if(_iter.isasingleblock) {     \
-          cout<<"was a single block "<<src<<" "<<tx.max_physical_vertex()<<endl<<endl<<endl;                                    \
-          auto [capacity, size, curr_version] = _iter.ds->adjacency_index.get_single_block_size(src, _iter.version); \
-          cout<<capacity<<" "<<size<<" "<<curr_version<<" "<<_iter.version<<endl; \
-          _iter.ds->adjacency_index[src].adjacency_set.get_pointer(_iter.version, true);         \ 
-                                                                               \
-        }                               \
-      }           \
         on_edge                         \
       } \                                           
   }      \

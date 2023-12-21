@@ -9,6 +9,13 @@
 //
 
 #include <cstring>
+#include <map>
+#include <set>
+#include <chrono>
+#include <iomanip>
+#include <vector>
+#include <algorithm>
+#include <sched.h>
 #include <cassert>
 #include <functional>
 #include "internal-driver/Configuration.h"
@@ -29,7 +36,7 @@
 #define ASSERT_SIZE 1
 #define ASSERT_WEIGHTS 0
 
-#define PER_BLOCK 128
+#define PER_BLOCK 512 
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
@@ -57,6 +64,8 @@ thread_local int VersioningBlockedSkipListAdjacencyList::gc_merges = 0;
 thread_local int VersioningBlockedSkipListAdjacencyList::gc_to_single_block = 0;
 
 thread_local FreeList VersioningBlockedSkipListAdjacencyList::local_free_list(PER_BLOCK);
+
+
 
 bool check[] = {false, false, false, false, false, false, false, false, false};
 
@@ -478,6 +487,7 @@ VAdjacencySetType VersioningBlockedSkipListAdjacencyList::get_set_type(vertex_id
 
 void VersioningBlockedSkipListAdjacencyList::insert_empty(edge_t edge, version_t version, char *properties) {
   
+ 
   // cout<<"edge_list_size for "<<edge.src<<" before: "<<neighbourhood_size_version(edge.src,version)<<endl;
   adjacency_index.create_new_version(edge.src,version, tm.getMinActiveVersion());
   EdgeBlock eb = new_single_edge_block(MIN_BLOCK_SIZE);
@@ -555,7 +565,6 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
       // chck(101, eb.get_single_block_pointer(), new_eb.get_single_block_pointer(), block_capacity);
       eb.copy_into(new_eb);
       // chck(102, eb.get_single_block_pointer(), new_eb.get_single_block_pointer(), block_capacity);
-      
       eb = new_eb;
       // chck(2);
     }
@@ -591,10 +600,14 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
 
       insert_skip_list(edge, version, properties);
      
-      if(curr_version==version)
+      if(curr_version==version){
         free_block(eb.get_single_block_pointer(), get_single_block_memory_size(block_capacity));
-      else 
+        
+      }
+      else {
         local_free_list.add_node(eb.get_single_block_pointer(),version, 0);
+        
+      }
       
       // chck(5);
       // recursive call of depth 2, inefficient could be done with one time less copying.
@@ -610,18 +623,19 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
 
       if(curr_version==version){
           free_block(eb.get_single_block_pointer(), 0);
+          
       }
       
-      else       
+      else{ 
         local_free_list.add_node(eb.get_single_block_pointer(),version, 0);
+        
+      }
       // chck(6);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
       assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion(), version);
 #endif
     }
   }
-
-   
      return;
 
 }
@@ -647,6 +661,7 @@ void VersioningBlockedSkipListAdjacencyList::add_new_pointer(VSkipListHeader *pH
 VSkipListHeader* VersioningBlockedSkipListAdjacencyList::copy_skip_list_block(dst_t src, VSkipListHeader *block, VSkipListHeader *blocks_per_level[SKIP_LIST_LEVELS], version_t version, int type){
       
   VSkipListHeader *new_old_block = new_skip_list_block();
+
   
   VSkipListHeader *pHead = (VSkipListHeader*)raw_neighbourhood_version(src, version);
   // find_block(pHead, *(block->data), version, blocks_per_level);
@@ -695,23 +710,23 @@ VSkipListHeader* VersioningBlockedSkipListAdjacencyList::copy_skip_list_block(ds
 
     for(int i=0;i<SKIP_LIST_LEVELS;i++){
       VSkipListHeader* pointer =  get_latest_next_pointer(block,i,version);
-      if(pointer!=nullptr && pointer->version>150){
-        cout<<pointer->version<<" "<<logical_id(src)<<endl;
-        cout<<"adding corrupted block "<<block->version<<" "<<i<<" "<<block->height<<endl<<endl;
-        cout<<"version: "<<pointer->version<<endl;
-        cout<<"size: "<<pointer->size<<endl;
-        cout<<"max: "<<pointer->max<<endl;
-        cout<<"height: "<<pointer->height<<endl;
-        for(int i=0;i<9;i++)
-        {
-          if(check[i])
-            cout<<"check at "<<i<<" happened"<<endl;
-        }
+      // if(pointer!=nullptr && pointer->version>150){
+      //   cout<<pointer->version<<" "<<logical_id(src)<<endl;
+      //   cout<<"adding corrupted block "<<block->version<<" "<<i<<" "<<block->height<<endl<<endl;
+      //   cout<<"version: "<<pointer->version<<endl;
+      //   cout<<"size: "<<pointer->size<<endl;
+      //   cout<<"max: "<<pointer->max<<endl;
+      //   cout<<"height: "<<pointer->height<<endl;
+      //   for(int i=0;i<9;i++)
+      //   {
+      //     if(check[i])
+      //       cout<<"check at "<<i<<" happened"<<endl;
+      //   }
 
         
 
-        exit(0);
-      }
+      //   exit(0);
+      // }
       new_old_block->next_levels[i]->add_new_pointer(pointer , version, tm.getMinActiveVersion(),6);
     }
     
@@ -725,10 +740,8 @@ VSkipListHeader* VersioningBlockedSkipListAdjacencyList::copy_skip_list_block(ds
       
     }
 
-    local_free_list.add_node(block, version, 1);
+    local_free_list.add_node(block, version, block->changes);
    
-
-
     // if(src==6187){
     //   VSkipListHeader *head = (VSkipListHeader*)raw_neighbourhood_version(src, version);
     //   while(head!=nullptr){
@@ -820,12 +833,14 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
 #if defined(DEBUG) && ASSERT_CONSISTENCY
     assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion(), version);
 #endif
+    new_old_block->changes++;
     // Recursive call of max depth 1.
     insert_skip_list(edge, version, properties);
     return;
   } else {
     eb.insert_edge(edge.dst, version, properties);
     eb.update_skip_list_header(new_old_block);
+    new_old_block->changes++;
     update_adjacency_size(edge.src, false, version);      //TODO
 #if defined(DEBUG) && ASSERT_CONSISTENCY
     assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion(), version);
@@ -1019,50 +1034,97 @@ VersioningBlockedSkipListAdjacencyList::construct_version_chain_from_block(verte
 //   return adjacency_index.raw_neighbourhood_size_entry(v);
 // }
 
-void VersioningBlockedSkipListAdjacencyList::gc_thread(version_t version){
+void VersioningBlockedSkipListAdjacencyList::gc_thread(version_t version, int id){
   
- 
-} 
+  // auto current_thread = pthread_self();
+  //   cpu_set_t cpu_set;
+  //   CPU_ZERO(&cpu_set);
+  //   CPU_SET(17+id%15, &cpu_set);
+  //   auto rc = pthread_setaffinity_np(current_thread, sizeof(cpu_set), &cpu_set);
+  //   if (rc != 0) { cout<<"[pin_thread_to_cpu] pthread_setaffinity_np, rc: " << rc; }
+
+  struct free_block block(0);
+  int sum = 0;
+  while(FreeList::get_next_block(version, block)){
+                // cout<<"num elements: "<<block.num_elements<<endl;
+                sum+=block.num_elements;
+                // numBlocks++;
+                // using clock = chrono::steady_clock;
+                // clock::time_point m_t0; // start time
+                //   clock::time_point m_t1;
+                //   m_t0 = clock::now();
+                for(int i=0;i<block.num_elements;i++){
+                    // memory += block.type[i];
+                  free_block(block.block[i],0);
+                  
+                }
+                free_block(block.block,0);
+                // m_t1 = clock::now();
+                // std::chrono::duration<double> duration = m_t1 - m_t0;
+                // cout<<"cleanded a block in "<<duration.count()<<endl;
+          } 
+  // cout<<"freed "<<sum<<" blocks"<<endl;
+}
+
+void helloWorld(){
+  cout<<"hello\n";
+}
+
+void VersioningBlockedSkipListAdjacencyList::createEpoch(version_t version){
+  versions.push(version);
+}
 
 void VersioningBlockedSkipListAdjacencyList::gc_all() {
   
   version_t min_active = tm.getMinActiveVersion();
   cout<<"calling GC for versions less than "<<min_active<<endl;
 
-
-
   vector<int> usedVersions; int sum=0;
-  for(auto x: FreeList::free_list)
+  while(!versions.empty())
   {
-    if(x.first<min_active)
+    version_t version = versions.front();
+
+    if(version<min_active)
     {
-      sum=0;
-      usedVersions.push_back(x.first);
-      cout<<"cleaning version "<<x.first<<endl;
-      
+      sum=0; double memory = 0;
+      if(version>100){
+        usedVersions.push_back(version);
+        cout<<"cleaning version "<<version<<endl;
+        vector<int> all;
       // vector<std::thread> threads;
-       struct free_block block(0);
-        while(FreeList::get_next_block(x.first, block)){
-              // cout<<"num elements: "<<block.num_elements<<endl;
-              sum+=block.num_elements;
-              for(int i=0;i<block.num_elements;i++){
-                if(block.type[i] == 1)
-                {
-                  if(((VSkipListHeader*)block.block[i])->version>=x.first){
-                      cout<<"cleaning going wrong"<<endl<<endl;
-                      exit(0);
-                  }
-                }
-                free_block(block.block[i],0);
-              }
-              free_block(block.block,0);
-        }
-      
-      cout<<"number of blocks collected = "<<sum<<endl;
+        
+        using clock = chrono::steady_clock;
+        int numBlocks = 0; double timetaken = 0; 
+        clock::time_point m_t0; // start time
+        clock::time_point m_t1; m_t0 = clock::now();
+          
+          std::vector<thread> threads;
+          int num_gc_thread = 16;
+          for(int i=0;i<num_gc_thread;i++){
+            std::thread th (&VersioningBlockedSkipListAdjacencyList::gc_thread, version, i);
+            threads.push_back(move(th));
+          }
+
+          for(int i=0;i<num_gc_thread;i++)
+          {
+            threads[i].join();
+          }
+
+          m_t1 = clock::now();
+          std::chrono::duration<double> duration = m_t1 - m_t0;
+          double total_time_taken = duration.count();
+          cout<<"Total time taken: "<<total_time_taken<<" total memory freed: "<<memory<<endl;
+          cout<<"number of blocks collected = "<<sum<<" across "<<numBlocks <<" in time: "<<timetaken<<endl;
+          
+          int count = 0;
+          
+      }
+        versions.pop();
     }
+    else break;
   }
   for(auto x:usedVersions)
-    FreeList::free_list.erase(x);
+    FreeList::eraseVersion(x);
   
 }
 
@@ -1266,8 +1328,9 @@ void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHea
             // }
           }
       after->before = before;
-
-      // free_block(block, memory_block_size());
+      {
+        free_block(block, memory_block_size());
+      }
       gc_merges += 1;
 
 
@@ -1296,7 +1359,9 @@ void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHea
       }
       after->before = before;
 
-      // free_block(block, memory_block_size());
+      {
+        free_block(block, memory_block_size());
+      }
       gc_merges += 1;
 
     }
@@ -1321,8 +1386,9 @@ void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id
     EdgeBlock new_e_b((dst_t*)single_block, single_block_size, 0, property_size);
 
     e_b.copy_into(new_e_b);
-
-    free_block(skip_list_block, memory_block_size());
+    {
+      free_block(skip_list_block, memory_block_size());
+    }
 
     adjacency_index.store_single_block(v, new_e_b.get_single_block_pointer(), new_e_b.get_block_capacity(),
                                        size, version);
@@ -1584,15 +1650,12 @@ size_t VersioningBlockedSkipListAdjacencyList::max_physical_vertex() {
 EdgeBlock VersioningBlockedSkipListAdjacencyList::new_single_edge_block(size_t capacity) {
   assert(capacity <= block_size);
   assert(MIN_BLOCK_SIZE <= capacity);
-
   auto block = (dst_t *) get_block(get_single_block_memory_size(capacity));
-
   return EdgeBlock(block, capacity, 0, property_size);
 }
 
 VSkipListHeader *VersioningBlockedSkipListAdjacencyList::new_skip_list_block() {
   auto h = (VSkipListHeader *) get_block(memory_block_size());
-
   // std::cout<<"\npointer: "<<h<<std::endl;
 
   h->data = get_data_pointer(h);
@@ -1600,7 +1663,7 @@ VSkipListHeader *VersioningBlockedSkipListAdjacencyList::new_skip_list_block() {
   h->height = 0;
   h->size = 0;
   h->max = 0;
-  
+  h->changes = 0;
   void *start = (void*)(h+1);
 
   // std::cout<<"size of header: "<<sizeof(VSkipListHeader)<<" + "<<sizeof(AllInlineAccessPointers)*SKIP_LIST_LEVELS<<std::endl;
@@ -1635,7 +1698,6 @@ VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_p(vertex_i
     }
     case VSKIP_LIST: {
       VSkipListHeader* ans = (VSkipListHeader*)set;
-      
       
       return VersionedBlockedEdgeIterator(this, src, (VSkipListHeader *) set, version);
     }
@@ -1745,6 +1807,7 @@ VersioningBlockedSkipListAdjacencyList::balance_block(VSkipListHeader *block, VS
       }
       to.update_skip_list_header(block);
       from.update_skip_list_header(balance_against);
+      balance_against->changes++;
     }
   }
   else{
@@ -1836,11 +1899,17 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
   if(curr_version!=version){
     adjacency_index.create_new_version(edge.src, version, tm.getMinActiveVersion());
     // chck(101);
+    int siz = 24*block_capacity;
+    if(eb.get_edges()*(2.2) <= block_capacity){
+      block_capacity = block_capacity >> 1;
+    }
+    
     EdgeBlock new_eb = new_single_edge_block(block_capacity);
+    
     // chck(102, eb.get_single_block_pointer(), new_eb.get_single_block_pointer(), block_capacity);
     eb.copy_into(new_eb);
     // chck(103, eb.get_single_block_pointer(), new_eb.get_single_block_pointer(), block_capacity);
-    local_free_list.add_node(eb.get_single_block_pointer(),version,0);
+    local_free_list.add_node(eb.get_single_block_pointer(),version, 0);
     eb = EdgeBlock::from_single_block(new_eb.get_single_block_pointer(), block_capacity, size, property_size);
   }
   // chck(1);
@@ -1850,6 +1919,11 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
   eb.delete_edge(edge.dst);
   adjacency_index.store_single_block(edge.src, eb.get_single_block_pointer(), block_capacity, size-1, version);
   // chck(2);
+
+  if(eb.get_edges()*(2.2) <= block_capacity)
+  {
+    // cout<<"overallocating "<<eb.get_edges()*(2.2)<<" "<<block_capacity<<endl;
+  }
   
   return true;
 }
@@ -1875,7 +1949,7 @@ bool VersioningBlockedSkipListAdjacencyList::delete_skip_list(edge_t edge, versi
 #endif
   {
     bool ret = eb.delete_edge(edge.dst);
-    
+    block->changes++;
     eb.update_skip_list_header(block);
     update_adjacency_size(edge.src, true, version);   //TODO
 #if defined(DEBUG) && ASSERT_CONSISTENCY

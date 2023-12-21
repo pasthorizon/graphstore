@@ -69,14 +69,10 @@ struct VertexVersionChainEntry;
 
 struct VertexEntry {
     AllInlineAccessPointersWithSize adjacency_set;
-    //need to store a copy list
     RWSpinLock lock {};
-    int x;
-
     VertexEntry() {
         
     }
-
     VertexEntry(const VertexEntry& other) {
       
     }
