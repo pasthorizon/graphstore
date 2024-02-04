@@ -145,7 +145,7 @@ private:
     vector<tuple<edge_t, char*, size_t>> edges_to_insert {};
 
     vector<RollbackAction> rollbacks {};
-
+    bool m_analytics;
     void rewrite_inserted_vertex_timestamps();
 };
 

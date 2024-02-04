@@ -70,6 +70,13 @@ struct VertexVersionChainEntry;
 struct VertexEntry {
     AllInlineAccessPointersWithSize adjacency_set;
     RWSpinLock lock {};
+
+    uint64_t wait_time_aggregate = 0;
+    uint64_t num_invoke = 0;
+
+    atomic<uint64_t> wait_time_aggregate_shared{0ul};
+    atomic<uint64_t> num_invoke_shared{0ul};
+
     VertexEntry() {
         
     }

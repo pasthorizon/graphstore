@@ -19,7 +19,7 @@ class AllInlineAccessPointers: public AccessPointers{
         AllInlineAccessPointers();
         AllInlineAccessPointers(const AllInlineAccessPointers& other);
 
-        atomic<version_t> versions[MAX_EPOCHS];
+        version_t versions[MAX_EPOCHS];
         void* pointers[MAX_EPOCHS];
 
         virtual void add_new_pointer(void *pointer, version_t version, version_t minActive=0, int type = 0);

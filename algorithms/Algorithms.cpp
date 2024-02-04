@@ -34,6 +34,7 @@ vector<pair<vertex_id_t, uint>> Algorithms::bfs(Driver &driver, TopologyInterfac
   vector<pair<vertex_id_t, uint>> logical_result;
   if (gapbs) {
     auto distances = GAPBSAlgorithms::bfs(ds, start_vertex, raw_neighbourhood);
+    // vector<uint> distances = {1,2};
     int N = distances.size();
     physical_result.resize(N);
 #pragma omp parallel for

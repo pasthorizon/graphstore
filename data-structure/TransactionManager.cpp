@@ -33,8 +33,10 @@ TransactionManager::TransactionManager(uint max_threads) : max_threads(max_threa
 }
 
 void TransactionManager::register_thread(size_t id) {
+  // cout<<"registering thread "<<id<<endl<<endl;
   lock_guard<mutex> l(thread_registry_lock);
   if (thread_id_in_use[id]) {
+    // cout<<"this thrown\n\n"<<endl;
     throw IllegalOperation("Tyring to reuse a thread id.");
   }
   thread_id_in_use[id] = true;

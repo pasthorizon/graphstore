@@ -14,11 +14,13 @@ std::set<pair<int,int>> SnapshotTransaction::alledges;
 mutex SnapshotTransaction::lock;
 
 SnapshotTransaction::SnapshotTransaction(TransactionManager* tm, bool write_only, VersionedTopologyInterface *ds, bool analytics)
-        : tm(tm), write_only(write_only), ds(ds) {
+        : tm(tm), write_only(write_only), ds(ds), m_analytics(false) {
   if (!write_only) {
     read_version =   tm->get_epoch();
-    if(analytics)
+    if(analytics){
       read_version--;
+      m_analytics = true;
+    }
     if (ds != nullptr) {
       max_physical_vertex_id = ds->max_physical_vertex();
       number_of_vertices = ds->vertex_count_version(read_version);
@@ -189,9 +191,12 @@ size_t SnapshotTransaction::neighbourhood_size_p(vertex_id_t src) {
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
   }
-  ds->aquire_vertex_lock_shared_p(src);
+  if(!m_analytics){
+    ds->aquire_vertex_lock_shared_p(src);
+  }
   auto ret = ds->neighbourhood_size_version_p(src, read_version);
-  ds->release_vertex_lock_shared_p(src);
+  if(!m_analytics)
+    ds->release_vertex_lock_shared_p(src);
   return ret;
 }
 
@@ -199,19 +204,30 @@ void SnapshotTransaction::intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
   }
-  ds->aquire_vertex_lock_shared_p(min(a, b));
-  ds->aquire_vertex_lock_shared_p(max(a, b));
+  if(!m_analytics){
+    ds->aquire_vertex_lock_shared_p(min(a, b));
+    ds->aquire_vertex_lock_shared_p(max(a, b));
+  }
+  
   ds->intersect_neighbourhood_version_p(a, b, out, read_version);
-  ds->release_vertex_lock_shared_p(a);
-  ds->release_vertex_lock_shared_p(b);
+  if(!m_analytics){
+    ds->release_vertex_lock_shared_p(a);
+    ds->release_vertex_lock_shared_p(b);
+  }
 }
 
 bool SnapshotTransaction::has_edge_p(edge_t edge) {
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
   }
-  ds->aquire_vertex_lock_shared_p(edge.src);
+  
+  if(!m_analytics){
+    ds->aquire_vertex_lock_shared_p(edge.src);
+  
+  }
+  
   auto ret = ds->has_edge_version_p(edge, read_version);
+  if(!m_analytics)
   ds->release_vertex_lock_shared_p(edge.src);
   return ret;
 }
@@ -261,9 +277,14 @@ bool SnapshotTransaction::has_vertex_p(vertex_id_t v) {
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
   }
-  ds->aquire_vertex_lock_shared_p(v);
+  //CAN WE AVOID LOCKING HERE????
+  if(!m_analytics){
+    ds->aquire_vertex_lock_shared_p(v);
+  }
   bool ret = ds->has_vertex_version_p(v, read_version);
-  ds->release_vertex_lock_shared_p(v);
+  if(!m_analytics){
+    ds->release_vertex_lock_shared_p(v);
+  }
   return ret;
 }
 
@@ -407,9 +428,13 @@ bool SnapshotTransaction::get_weight(edge_t edge, char *out) {
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
   }
-  ds->aquire_vertex_lock(edge.src);
+  
+  if(!m_analytics){
+    ds->aquire_vertex_lock(edge.src);
+  }
   auto ret = ds->get_weight_version(edge, read_version, out);
-  ds->release_vertex_lock(edge.src);
+  if(!m_analytics)
+    ds->release_vertex_lock(edge.src);
   return ret;
 }
 
@@ -417,9 +442,13 @@ bool SnapshotTransaction::get_weight_p(edge_t edge, char* out) {
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
   }
-  ds->aquire_vertex_lock_shared_p(edge.src);
+  bool locked = false;
+  if(!m_analytics){
+      ds->aquire_vertex_lock_shared_p(edge.src);
+  }
   auto ret = ds->get_weight_version_p(edge, read_version, out);
-  ds->release_vertex_lock_shared_p(edge.src);
+  if(!m_analytics)
+    ds->release_vertex_lock_shared_p(edge.src);
   return ret;
 }
 

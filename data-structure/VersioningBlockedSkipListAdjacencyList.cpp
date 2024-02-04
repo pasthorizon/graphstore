@@ -661,8 +661,7 @@ void VersioningBlockedSkipListAdjacencyList::add_new_pointer(VSkipListHeader *pH
 VSkipListHeader* VersioningBlockedSkipListAdjacencyList::copy_skip_list_block(dst_t src, VSkipListHeader *block, VSkipListHeader *blocks_per_level[SKIP_LIST_LEVELS], version_t version, int type){
       
   VSkipListHeader *new_old_block = new_skip_list_block();
-
-  
+  // block->version = version;
   VSkipListHeader *pHead = (VSkipListHeader*)raw_neighbourhood_version(src, version);
   // find_block(pHead, *(block->data), version, blocks_per_level);
 
@@ -742,15 +741,15 @@ VSkipListHeader* VersioningBlockedSkipListAdjacencyList::copy_skip_list_block(ds
 
     local_free_list.add_node(block, version, block->changes);
    
-    // if(src==6187){
-    //   VSkipListHeader *head = (VSkipListHeader*)raw_neighbourhood_version(src, version);
-    //   while(head!=nullptr){
-    //     cout<<"block details: min: "<<(*(head->data))<<" max: "<<head->max<<" version: "<<head->version<<endl;
-    //     head = (VSkipListHeader*)head->next_levels[1]->get_latest_pointer();
-    //   }
-    //   cout<<"\n\n---------------------------------\n\n"<<endl;
-    // }
-
+  //   // if(src==6187){
+  //   //   VSkipListHeader *head = (VSkipListHeader*)raw_neighbourhood_version(src, version);
+  //   //   while(head!=nullptr){
+  //   //     cout<<"block details: min: "<<(*(head->data))<<" max: "<<head->max<<" version: "<<head->version<<endl;
+  //   //     head = (VSkipListHeader*)head->next_levels[1]->get_latest_pointer();
+  //   //   }
+  //   //   cout<<"\n\n---------------------------------\n\n"<<endl;
+  //   // }
+    // return block;
     return new_old_block;
 }
 
@@ -1036,12 +1035,15 @@ VersioningBlockedSkipListAdjacencyList::construct_version_chain_from_block(verte
 
 void VersioningBlockedSkipListAdjacencyList::gc_thread(version_t version, int id){
   
-  // auto current_thread = pthread_self();
-  //   cpu_set_t cpu_set;
-  //   CPU_ZERO(&cpu_set);
-  //   CPU_SET(17+id%15, &cpu_set);
-  //   auto rc = pthread_setaffinity_np(current_thread, sizeof(cpu_set), &cpu_set);
-  //   if (rc != 0) { cout<<"[pin_thread_to_cpu] pthread_setaffinity_np, rc: " << rc; }
+  auto current_thread = pthread_self();
+    cpu_set_t cpu_set;
+    CPU_ZERO(&cpu_set);
+    if(id<4)
+    CPU_SET(16+id, &cpu_set);
+    else 
+    CPU_SET(20+id, &cpu_set);
+    auto rc = pthread_setaffinity_np(current_thread, sizeof(cpu_set), &cpu_set);
+    if (rc != 0) { cout<<"[pin_thread_to_cpu] pthread_setaffinity_np, rc: " << rc; }
 
   struct free_block block(0);
   int sum = 0;
@@ -1099,7 +1101,7 @@ void VersioningBlockedSkipListAdjacencyList::gc_all() {
         clock::time_point m_t1; m_t0 = clock::now();
           
           std::vector<thread> threads;
-          int num_gc_thread = 16;
+          int num_gc_thread = 8;
           for(int i=0;i<num_gc_thread;i++){
             std::thread th (&VersioningBlockedSkipListAdjacencyList::gc_thread, version, i);
             threads.push_back(move(th));
@@ -1539,6 +1541,33 @@ dst_t VersioningBlockedSkipListAdjacencyList::get_min_from_skip_list_header(VSki
 }
 
 VersioningBlockedSkipListAdjacencyList::~VersioningBlockedSkipListAdjacencyList() {
+
+   ofstream output;
+  output.open("wait_time.csv");
+
+  int N = max_physical_vertex();
+  for(int i=0;i<N;i++){
+    size_t size = neighbourhood_size_version_p(i, 100000000000000);
+    double wait = adjacency_index[i].wait_time_aggregate;
+    double ans=0;
+    if(adjacency_index[i].num_invoke)
+     ans = wait/adjacency_index[i].num_invoke;
+    output<<size<<","<<wait<<","<<adjacency_index[i].num_invoke<<","<<ans<<endl;
+
+  }
+
+  ofstream output_shared;
+  output_shared.open("wait_time_shared.csv");
+
+  for(int i=0;i<N;i++){
+    size_t size = neighbourhood_size_version_p(i, 100000000000000);
+    double wait_shared = adjacency_index[i].wait_time_aggregate_shared;
+    double ans=0;
+    if(adjacency_index[i].num_invoke_shared)
+      ans = wait_shared/adjacency_index[i].num_invoke_shared;
+    output_shared<<size<<","<<wait_shared<<","<<adjacency_index[i].num_invoke_shared<<","<<ans<<endl;
+  }
+
   gc_all();  // Make the data structure completely unversioned.
 
 #if defined(DEBUG) && ASSERT_CONSISTENCY
@@ -1612,8 +1641,13 @@ size_t VersioningBlockedSkipListAdjacencyList::get_max_vertex() {
 size_t VersioningBlockedSkipListAdjacencyList::edge_count_version(version_t version) {
   size_t sum = 0;
   for (size_t v = 0, sz = get_max_vertex(); v < sz; v++) {
-    aquire_vertex_lock_p(v);
+    bool locked = false;
+    if(tm.get_epoch() == version){
+      aquire_vertex_lock_p(v);
+      locked = true;
+    }
     sum += neighbourhood_size_version_p(v, version);
+    if(locked)
     release_vertex_lock_p(v);
   }
   return sum;
@@ -1920,11 +1954,6 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
   adjacency_index.store_single_block(edge.src, eb.get_single_block_pointer(), block_capacity, size-1, version);
   // chck(2);
 
-  if(eb.get_edges()*(2.2) <= block_capacity)
-  {
-    // cout<<"overallocating "<<eb.get_edges()*(2.2)<<" "<<block_capacity<<endl;
-  }
-  
   return true;
 }
 

@@ -73,11 +73,20 @@ size_t VertexIndex::get_vertex_count(version_t version) {
 
 void VertexIndex::aquire_vertex_lock_p(vertex_id_t v) {
   // TODO with the c++20 flag implementation we could do this: https://rigtorp.se/spinlock/
+  uint64_t start = __rdtsc();
   index[v].lock.lock();
+  uint64_t end = __rdtsc();
+
+  index[v].wait_time_aggregate += end - start;
+  index[v].num_invoke ++;
 }
 
 void VertexIndex::aquire_vertex_lock_shared_p(const vertex_id_t v) {
+  uint64_t start = __rdtsc();
   index[v].lock.lock_shared();
+  uint64_t end = __rdtsc();
+  index[v].wait_time_aggregate_shared += end-start;
+  index[v].num_invoke_shared ++;
 }
 
 void VertexIndex::release_vertex_lock_shared_p(const vertex_id_t v) {
