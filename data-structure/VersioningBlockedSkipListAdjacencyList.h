@@ -161,7 +161,7 @@ private:
     size_t skip_list_header_size() const;
     dst_t* get_data_pointer(VSkipListHeader* header) const;
 
-    dst_t* find_upper_bound(dst_t* start, uint16_t size, dst_t value);
+    dst_t* find_upper_bound(dst_t* start, uint16_t size, dst_t value, bool debug=false);
 
     EdgeBlock new_single_edge_block(size_t min_capicity_in_edges);
     VSkipListHeader* new_skip_list_block();

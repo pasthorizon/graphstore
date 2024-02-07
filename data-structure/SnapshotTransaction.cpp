@@ -352,21 +352,21 @@ void SnapshotTransaction::assert_std_preconditions() {
 
         cout<<"looking for edge "<<e.src<<" "<<e.dst<<" not found!!"<<endl;
 
-        for(int i=0;i<edges_to_delete.size();i++)
-          cout<<edges_to_delete[i].src<<" "<<edges_to_delete[i].dst<<endl;
+        // for(int i=0;i<edges_to_delete.size();i++)
+        //   cout<<edges_to_delete[i].src<<" "<<edges_to_delete[i].dst<<endl;
 
         edge_t p_edge (ds->physical_id(e.src), ds->physical_id(e.dst));
         cout<<"\n\ncommit version "<<commit_version<<endl;
         ds->has_edge_version_p(p_edge, commit_version, true);
-        cout<<endl<<endl;
-        cout<<"\n\ncommit version "<<commit_version-1<<endl;
+        // cout<<endl<<endl;
+        // cout<<"\n\ncommit version "<<commit_version-1<<endl;
 
-        ds->has_edge_version_p(p_edge, commit_version-1, true);
-        cout<<endl<<endl;
-        cout<<"\n\ncommit version "<<commit_version-2<<endl;
+        // ds->has_edge_version_p(p_edge, commit_version-1, true);
+        // cout<<endl<<endl;
+        // cout<<"\n\ncommit version "<<commit_version-2<<endl;
 
-        ds->has_edge_version_p(p_edge, commit_version-2, true);
-                cout<<endl<<endl;
+        // ds->has_edge_version_p(p_edge, commit_version-2, true);
+        //         cout<<endl<<endl;
 
 
 
