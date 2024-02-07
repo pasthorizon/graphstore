@@ -47,12 +47,12 @@ bool SnapshotTransaction::execute() {
         continue;
       }
       ds->delete_edge_version(p_edge, commit_version);
-      if(ds->has_edge_version_p(p_edge, commit_version)){
-        cout<<"\nedge found after deletion\n";
-        cout<<p_edge.src<<" "<<p_edge.dst<<endl;
-        ds->has_edge_version_p(p_edge, commit_version, true);
-        throw EdgeExistsException(e);
-      }
+      // if(ds->has_edge_version_p(p_edge, commit_version)){
+      //   cout<<"\nedge found after deletion\n";
+      //   cout<<p_edge.src<<" "<<p_edge.dst<<endl;
+      //   ds->has_edge_version_p(p_edge, commit_version, true);
+      //   throw EdgeExistsException(e);
+      // }
     }
 //    auto i = 0;
     for (auto [e, properties, properties_size] : edges_to_insert) {
@@ -68,10 +68,10 @@ bool SnapshotTransaction::execute() {
       // 15087 609451
       ds->insert_edge_version(p_edge, commit_version, properties, properties_size);
 
-      if(!ds->has_edge_version_p(p_edge, commit_version)){
-        cout<<"\nedge not found after insertion\n";
-        throw EdgeDoesNotExistsException(e);
-      }
+      // if(!ds->has_edge_version_p(p_edge, commit_version)){
+      //   cout<<"\nedge not found after insertion\n";
+      //   throw EdgeDoesNotExistsException(e);
+      // }
 //        i++;
 //        if (i % 1000 == 0) {
 //        cout << ".";
@@ -85,10 +85,10 @@ bool SnapshotTransaction::execute() {
     for (auto [e, properties, properties_size] : edges_to_update_or_insert) {
       edge_t p_edge (ds->physical_id(e.src), ds->physical_id(e.dst));
       ds->insert_edge_version(p_edge, commit_version, properties, properties_size);
-      if(!ds->has_edge_version_p(p_edge, commit_version)){
-        cout<<"\nedge not found after insertion\n";
-        throw EdgeDoesNotExistsException(e);
-      }
+      // if(!ds->has_edge_version_p(p_edge, commit_version)){
+      //   cout<<"\nedge not found after insertion\n";
+      //   throw EdgeDoesNotExistsException(e);
+      // }
     }
 
 

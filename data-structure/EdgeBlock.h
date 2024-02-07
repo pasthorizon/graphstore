@@ -158,9 +158,9 @@ public:
       }
 
       for(int i=(new_pos-1)/64-1;i>=0;i--){
-        if(*(bitmask+i)){
+        if(*(bitmask+i)!=0xFFFFFFFFFFFFFFFF){
           for(int j=0;j<63;j++)
-            if(*(bitmask+i) & (1ul<<j))
+            if(!(*(bitmask+i) & (1ul<<j)))
               return (i*64 + (63-j));
         }
       }
@@ -178,13 +178,15 @@ public:
       }
       for(int i=((new_pos+1)/64+1);i<max(1ul, capacity/64);i++)
       {
-        if(*(bitmask+i)){
+        if(*(bitmask+i) != 0xFFFFFFFFFFFFFFFF){
           for(int j=63;j>=0;j--)
-            if(*(bitmask+i) & (1ul<<j))
+            if(!(*(bitmask+i) & (1ul<<j)))
               return (i*64 + (63-j));
         }
       }
 
+      cout<<"couldnt find right bit for "<<new_pos<<endl;
+      print_bitset();
       return 1e9;
     } 
 
@@ -211,7 +213,7 @@ public:
 
         if(abs(left - new_pos) > abs(right - new_pos)){
            int units_to_move = right - new_pos; 
-            setbit(bitmask, right);
+            setbit(bitmask, right); cout<<"setting bit for : "<<right<<endl; 
            memmove(pos+1, pos, units_to_move*sizeof(dst_t));
            memmove(weights + new_pos+1, weights + new_pos, units_to_move*sizeof(weight_t));
            memmove(properties + (new_pos + 1)*property_size ,properties + property_size*new_pos, units_to_move*property_size);
@@ -337,11 +339,11 @@ public:
       memcpy(other.properties_start(), properties, edges * property_size);
       memcpy(other.weights_start(), weights, edges*sizeof(weight_t));
 
-      cout<<"other block after copying"<<endl;
+      // cout<<"other block after copying"<<endl;
 
-      for(int i=0;i<edges;i++)
-        cout<<*(other.start+i)<<" ";
-      cout<<endl;
+      // for(int i=0;i<edges;i++)
+      //   cout<<*(other.start+i)<<" ";
+      // cout<<endl;
     };
 
     size_t split_into(EdgeBlock &other) {
@@ -382,9 +384,9 @@ public:
       weight_t* weights_start = block.weights_start();
       char* properties_start = block.properties_start();
       int current = 0; bool found = false;
-      cout<<"testin compact block: ";
-      for(int i=0;i<block.capacity;i++) cout<< *(block.start+i)<<" ";
-      cout<<endl;
+      // cout<<"testin compact block: ";
+      // for(int i=0;i<block.capacity;i++) cout<< *(block.start+i)<<" ";
+      // cout<<endl;
       for(int i=0;i<block.capacity;i++){
         if(isBitSet(bitmask, i))
         {
@@ -399,10 +401,10 @@ public:
           else current++;
         }
       }
-      cout<<"block after compaction: "<<endl;
-      for(int i=0;i<block.capacity;i++)
-        cout<< *(block.start+i)<<" ";
-      cout<<endl;
+      // cout<<"block after compaction: "<<endl;
+      // for(int i=0;i<block.capacity;i++)
+      //   cout<< *(block.start+i)<<" ";
+      // cout<<endl;
     }
     
     static void move_forward(EdgeBlock& from, EdgeBlock& to, size_t elements) {
