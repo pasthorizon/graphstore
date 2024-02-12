@@ -127,8 +127,6 @@ void  AllInlineAccessPointersWithSize::add_new_pointer(void *pointer, version_t 
 
         pointers[0] = pointer;
         versions[0] = version;
-
-        
     }
     else pointers[0] = pointer;
 }

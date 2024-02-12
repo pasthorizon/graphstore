@@ -135,7 +135,10 @@ public:
 
     inline void create_new_version(vertex_id_t v, version_t version, version_t min_active_version){
       void *latest_pointer = index[v].adjacency_set.get_latest_pointer();
+      uint64_t start = __rdtsc();
       index[v].adjacency_set.add_new_pointer(latest_pointer, version, min_active_version);
+      uint64_t end = __rdtsc();
+      index[v].wait_time_aggregate += end - start;
       return;
     }
 

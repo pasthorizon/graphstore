@@ -769,9 +769,11 @@ VSkipListHeader* VersioningBlockedSkipListAdjacencyList::copy_skip_list_block(ds
       next->before = new_old_block;
 
     if(block == (VSkipListHeader*)adjacency_index.neighbourhood_version(src,version)){
-
+      uint64_t start = __rdtsc();
       adjacency_index[src].adjacency_set.add_new_pointer((void*)new_old_block, version, tm.getMinActiveVersion(), 7);
-      
+      uint64_t end = __rdtsc();
+
+      adjacency_index[src].wait_time_aggregate += end-start;
     }
 
     local_free_list.add_node(block, version, block->changes);
@@ -1592,21 +1594,21 @@ VersioningBlockedSkipListAdjacencyList::~VersioningBlockedSkipListAdjacencyList(
     double ans=0;
     if(adjacency_index[i].num_invoke)
      ans = wait/adjacency_index[i].num_invoke;
-    output<<size<<","<<wait<<","<<adjacency_index[i].num_invoke<<","<<ans<<endl;
-
+    // output<<size<<","<<wait<<","<<adjacency_index[i].num_invoke<<","<<ans<<endl;
+    output << i << "," << adjacency_index[i].wait_time_aggregate << endl;
   }
 
-  ofstream output_shared;
-  output_shared.open("wait_time_shared.csv");
+  // ofstream output_shared;
+  // output_shared.open("wait_time_shared.csv");
 
-  for(int i=0;i<N;i++){
-    size_t size = neighbourhood_size_version_p(i, 100000000000000);
-    double wait_shared = adjacency_index[i].wait_time_aggregate_shared;
-    double ans=0;
-    if(adjacency_index[i].num_invoke_shared)
-      ans = wait_shared/adjacency_index[i].num_invoke_shared;
-    output_shared<<size<<","<<wait_shared<<","<<adjacency_index[i].num_invoke_shared<<","<<ans<<endl;
-  }
+  // for(int i=0;i<N;i++){
+  //   size_t size = neighbourhood_size_version_p(i, 100000000000000);
+  //   double wait_shared = adjacency_index[i].wait_time_aggregate_shared;
+  //   double ans=0;
+  //   if(adjacency_index[i].num_invoke_shared)
+  //     ans = wait_shared/adjacency_index[i].num_invoke_shared;
+  //   output_shared<<size<<","<<wait_shared<<","<<adjacency_index[i].num_invoke_shared<<","<<ans<<endl;
+  // }
 
   gc_all();  // Make the data structure completely unversioned.
 
