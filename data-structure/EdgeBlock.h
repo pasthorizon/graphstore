@@ -159,7 +159,7 @@ public:
 
       for(int i=(new_pos-1)/64-1;i>=0;i--){
         if(*(bitmask+i)!=0xFFFFFFFFFFFFFFFF){
-          for(int j=0;j<63;j++)
+          for(int j=0;j<64;j++)
             if(!(*(bitmask+i) & (1ul<<j)))
               return (i*64 + (63-j));
         }
@@ -171,7 +171,7 @@ public:
 
     int findUnsetBitRight(int new_pos){
       
-      for(int i=new_pos+1;i<((new_pos+1)/64+1)*64;i++)
+      for(int i=new_pos+1;i<((new_pos+1)/64+1)*64 && i<capacity;i++)
       {
          bool isSet = isBitSet(bitmask, i);
         if(!isSet) return i;
@@ -179,14 +179,14 @@ public:
       for(int i=((new_pos+1)/64+1);i<max(1ul, capacity/64);i++)
       {
         if(*(bitmask+i) != 0xFFFFFFFFFFFFFFFF){
-          for(int j=63;j>=0;j--)
+          for(int j=63;j>=0 && 64*i + (63-j)<capacity;j--)
             if(!(*(bitmask+i) & (1ul<<j)))
               return (i*64 + (63-j));
         }
       }
 
-      cout<<"couldnt find right bit for "<<new_pos<<endl;
-      print_bitset();
+      // cout<<"couldnt find right bit for "<<new_pos<<endl;
+      // print_bitset();
       return 1e9;
     } 
 
@@ -197,46 +197,139 @@ public:
      * @param version
      * @param properties
      */
-    bool insert_edge(dst_t e, weight_t weight, char *property) {
+    bool insert_edge(dst_t e, weight_t weight, char *property, bool debug = false) {
+
+
+      // if(debug)
+      //   {
+      //     cout<<"[debug insert edge] trying to insert "<<e<<endl;
+      //     cout<<"block capacity: "<<capacity<<endl;
+      //     print_bitset(); 
+
+      //     for(int i=0;i<capacity;i++)
+      //       cout<<*(start+i)<<" ";
+      //     cout<<endl;
+      //     cout<<endl;
+
+      //   }
+      // int _left, _units_to_move; bool happend1 = false, happend2 = false, happend3 = false, happend4 = false;
+      // uint64_t before_bitmask[] = {0,0,0,0,0,0,0,0};
+      // dst_t before_state[] = {0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0 };
       
+      // for(int i=0;i<min(64, (int)capacity);i++)
+      //   *(before_state + i) = *(start+i);
+      
+      // for(int i=0;i<max(1ul, capacity/64);i++)
+      //   before_bitmask[i] = *(bitmask+i);
       assert(has_space_to_insert_edge());
       auto pos = find_upper_bound(start, get_max_edge_index(), e);
       int new_pos = pos-start;
       // std::cout<<"Edge being inserted at position: "<<(pos-start)<<std::endl;
-      if(!isBitSet(bitmask, new_pos)){
+      if(new_pos == capacity){
+        int left = findUnsetBitLeft(new_pos);
+        setbit(bitmask, left);
+        int units_to_move = new_pos - left; 
+
+        memmove(start + left, start + left + 1, units_to_move*sizeof(dst_t));
+        memmove(weights + left, weights + left + 1, units_to_move*sizeof(weight_t));
+        memmove(properties + (left)*property_size ,properties + property_size*(left+1), units_to_move*property_size);
+        pos--; new_pos--;
+        // happend1 = true;
+        // if(debug)
+        // cout<<"edge to be inserted in the end; new_pos: "<<new_pos<<endl;
+      }
+      else if(!isBitSet(bitmask, new_pos)){
         // cout<<"can insert edge here at pos: "<<new_pos<<endl;
+        // if(e==1114) cout<<"finding unset bit pos"<<endl;
+        // happend2 = true;
+        // if(debug)
+        // cout<<"edge to be inserted in an already empty slot: "<<new_pos<<endl;
       }
       else if(inline_unmask(*pos)!=e){
-        
+        if(debug){
+          cout<<"[debug insert_edge]: edge to be inserted in an already full slot: "<<new_pos<<endl;
+        }
         int left = findUnsetBitLeft(new_pos);
         int right = findUnsetBitRight(new_pos);
-
+        if(debug){
+          cout<<"[debug insert_edge]: left returned: "<<left<<" right returned:"<<right<<endl;
+        }
         if(abs(left - new_pos) > abs(right - new_pos)){
            int units_to_move = right - new_pos; 
-            setbit(bitmask, right); cout<<"setting bit for : "<<right<<endl; 
+            setbit(bitmask, right); 
+            // cout<<"setting bit for : "<<right<<endl; 
            memmove(pos+1, pos, units_to_move*sizeof(dst_t));
            memmove(weights + new_pos+1, weights + new_pos, units_to_move*sizeof(weight_t));
            memmove(properties + (new_pos + 1)*property_size ,properties + property_size*new_pos, units_to_move*property_size);
+          //  happend3 = true;
         }
 
         else{
+          pos--; new_pos--;
           setbit(bitmask, left);
+          // _left = left;
           int units_to_move = new_pos - left; 
-
+          // _units_to_move = units_to_move;
           memmove(start + left, start + left + 1, units_to_move*sizeof(dst_t));
           memmove(weights + left, weights + left + 1, units_to_move*sizeof(weight_t));
           memmove(properties + (left)*property_size ,properties + property_size*(left+1), units_to_move*property_size);
-
+          // happend4 = true;
         }
-        
+      
       }
-
+      if(debug){
+        cout<<"finally inserting in "<<new_pos<<endl;
+      }
       *pos = e;
       *(weights + new_pos) = weight;
       memcpy(properties + new_pos*property_size, property, property_size);
         // cout<<"inserted edge now setting bit"<<endl;
         setbit(bitmask, new_pos);
       edges+=1;
+
+      // if(debug){
+      //   cout<<"[debug] final state of block: "<<endl;
+      //   print_bitset();
+      //   for(int i=0;i<capacity;i++)
+      //     cout<<*(start+i)<<" ";
+      //   cout<<endl;
+      // }
+      // int popcount = 0; int count =0 ;
+      // for(int i=0;i<max(1ul, capacity/64);i++){
+      //   for(int j=63;j>=0 && count<capacity;j--){
+      //     count++;
+      //     if(*(bitmask+i) & (1ul<<j))
+      //       popcount ++;
+      //   } 
+      // }
+
+      // if(popcount != edges){
+      //   cout<<"\nhappend: "<<happend1<<" "<<happend2<<" "<<happend3<<" "<<happend4<<endl;
+      //   cout<<"\nleft: "<<_left<<" _units_to_move: "<<_units_to_move<<endl;
+      //   cout<<popcount<<" "<<edges<<endl;
+      //   cout<<"before bitmask: "<<endl;
+      //   for(int i=0;i<max(1ul, capacity/64);i++)
+      //   {
+      //     for(int j=63;j>=0;j--)
+      //       if(*(before_bitmask+i) & (1ul<<j)) cout<<1;
+      //       else cout<<0;
+          
+      //     cout<<" ";
+      //   }
+      //   cout<<endl;
+      //   print_bitset();
+      //   cout<<"capacity: "<<capacity<<endl;
+      //   cout<<"inserted edge "<<e<<" at new pos: "<<new_pos<<endl;
+      //   for(int i=0;i<capacity;i++)
+      //     cout<<*(start+i)<<" ";
+      //   cout<<endl<<endl;
+
+      //   for(int i=0;i<capacity;i++)
+      //     cout<<*(before_state+i)<<" ";
+      //   cout<<endl;
+      //   exit(0);
+      // }
+
       return true;
 
     };
@@ -245,25 +338,57 @@ public:
     bool delete_edge(dst_t e) {
       // assert(has_space_to_delete_edge());
 
+      // uint64_t before_bitmask[] = {0,0,0,0,0,0,0,0};
+      // for(int i=0;i<max(1ul, capacity/64);i++)
+      //   before_bitmask[i] = *(bitmask+i);
+      // dst_t before;
       auto ptr = find_upper_bound(start, get_max_edge_index(), e);
       if (ptr == start + get_max_edge_index() || make_unversioned(*ptr) != e || isDeleted(*ptr)) {  // Edge does not exist
         return false;
       } 
       else{
-
+        // before = *ptr;
         *ptr = mark_deleted(*ptr);
         int pos = ptr - start;
         unsetbit(bitmask, pos);
-
-        // if(edges>1){
-        //     int new_pos = ptr - start;
-        //     memmove(start + new_pos, start + new_pos + 1, (edges-new_pos-1)*sizeof(dst_t));
-        //     memmove(weights + new_pos, weights + new_pos + 1, (edges-new_pos-1)*sizeof(weight_t));
-        //     memmove(properties + new_pos*property_size, properties + (new_pos + 1)*property_size, (edges-new_pos-1)*property_size);
-        // }
-        // else{ std::cout<<"didnt delete edge"<<std::endl;}
       }
       edges-=1;
+
+      // int popcount = 0; int count = 0;
+      // for(int i=0;i<max(1ul, capacity/64);i++){
+      //   for(int j=63;j>=0 && count<capacity;j--){
+      //     count++;
+      //     if(*(bitmask+i) & (1ul<<j))
+      //       popcount ++;
+      //   }
+      // }
+
+      //  if(popcount != edges) {
+      //   cout<<edges<<" "<<popcount<<endl;
+      //   cout<<"before bitset: "<<endl;
+      //   for(int i=0;i<max(1ul, capacity/64);i++)
+      //   {
+      //     for(int j=63;j>=0;j--)
+      //       if(*(before_bitmask+i) & (1ul<<j)) cout<<1;
+      //     else cout<<0; 
+
+      //     cout<<" ";
+      //   }
+      //   cout<<endl;
+
+      //   print_bitset();
+
+      //   cout<<"to delete: "<<e<<endl;
+      //   cout<<"deleted before : "<<before<<endl;
+      //   cout<<"delete posiiont member: "<<*ptr<<endl;
+
+      //   for(int i=0;i<capacity;i++)
+      //     cout<<*(start+i)<<" ";
+      //   cout<<endl;
+      //   cout<<"delete edge"<<endl;
+      //   exit(0);
+      // }
+
       return true;
     }
 
@@ -335,9 +460,9 @@ public:
         *(other.bitmask_start()+i) = 0;
 
       memcpy(other.bitmask_start(), bitmask, max(1ul,capacity/64)*sizeof(uint64_t));
-      memcpy(other.start, start, edges * sizeof(dst_t));
-      memcpy(other.properties_start(), properties, edges * property_size);
-      memcpy(other.weights_start(), weights, edges*sizeof(weight_t));
+      memcpy(other.start, start, capacity * sizeof(dst_t));
+      memcpy(other.properties_start(), properties, capacity * property_size);
+      memcpy(other.weights_start(), weights, capacity*sizeof(weight_t));
 
       // cout<<"other block after copying"<<endl;
 
@@ -368,6 +493,34 @@ public:
 
       }
 
+      // int popcount = 0; int count = 0;
+      // for(int i=0;i<max(1ul, capacity/64);i++){
+      //   for(int j=63;j>=0 && count<capacity;j--){
+      //     count++;
+      //     if(*(bitmask+i) & (1ul<<j))
+      //       popcount ++;
+      //   }
+      // }
+
+      //  if(popcount != edges) {
+      //   cout<<"split into self"<<endl;
+      //   exit(0);
+      // }
+
+      // int otherpopcount = 0; count = 0;
+      // for(int i=0;i<max(1ul, other.capacity/64);i++){
+      //   for(int j=63;j>=0 && count<other.capacity;j--){
+      //     count++;
+      //     if(*(other.bitmask+i) & (1ul<<j))
+      //       otherpopcount ++;
+      //   }
+      // }
+
+      //  if(otherpopcount != other.edges) {
+      //   cout<<"split into other"<<endl;
+      //   exit(0);
+      // }
+
       return split;
     }
 
@@ -395,12 +548,27 @@ public:
             memcpy(weights_start+current, weights_start + i, sizeof(weight_t));
             memcpy(properties_start+(current*block.property_size), properties_start+(i*block.property_size), block.property_size);
             unsetbit(bitmask, i);
+            *(start+i) = mark_deleted(*(start+i));
             setbit(bitmask, current);
             current++;
           }
           else current++;
         }
       }
+
+      // int popcount = 0; int count = 0;
+      // for(int i=0;i<max(1ul, block.capacity/64);i++){
+      //   for(int j=63;j>=0 && count<block.capacity;j--){
+      //     count++;
+      //     if(*(block.bitmask+i) & (1ul<<j))
+      //       popcount ++;
+      //   }
+      // }
+
+      //  if(popcount != block.edges) {
+      //   cout<<"compact edge"<<endl;
+      //   exit(0);
+      // }
       // cout<<"block after compaction: "<<endl;
       // for(int i=0;i<block.capacity;i++)
       //   cout<< *(block.start+i)<<" ";
@@ -442,8 +610,35 @@ public:
       from.edges -= elements;
       to.edges += elements;
 
+      // int frompopcount = 0; int count = 0;
+      // for(int i=0;i<max(1ul, from.capacity/64);i++){
+      //   for(int j=63;j>=0 && count<from.capacity;j--){
+      //     count++;
+      //     if(*(from.bitmask+i) & (1ul<<j))
+      //       frompopcount ++;
+      //   }
+      // }
+
+      //  if(frompopcount != from.edges) {
+      //   cout<<"--510--"<<endl;
+      //   exit(0);
+      // }
       
-      
+      //  int topopcount = 0; count = 0;
+      // for(int i=0;i<max(1ul, to.capacity/64);i++){
+      //  for(int j=63;j>=0 && count<to.capacity;j--){
+      //   count++;
+      //     if(*(to.bitmask+i) & (1ul<<j))
+      //       topopcount ++;
+      //   }
+      // }
+
+      //  if(topopcount != to.edges) {
+      //   cout<<"--521--"<<endl;
+      //   exit(0);
+      // }
+
+      // assert(topopcount == to.edges);
     }
 
     static void move_backward(EdgeBlock& from, EdgeBlock& to, size_t elements) {
@@ -482,6 +677,34 @@ public:
 
       from.edges -= elements;
       to.edges += elements;
+
+      // int frompopcount = 0; int count = 0;
+      // for(int i=0;i<max(1ul, from.capacity/64);i++){
+      //   for(int j=63;j>=0 && count<from.capacity;j--){
+      //     count++;
+      //     if(*(from.bitmask+i) & (1ul<<j))
+      //       frompopcount ++;
+      //   }
+      // }
+
+      //  if(frompopcount != from.edges) {
+      //   cout<<"--572--"<<endl;
+      //   exit(0);
+      // }
+      
+      //  int topopcount = 0;  count =0;
+      // for(int i=0;i<max(1ul, to.capacity/64);i++){
+      //   for(int j=63;j>=0 && count<to.capacity;j--){
+      //     count++;
+      //     if(*(to.bitmask+i) & (1ul<<j))
+      //       topopcount ++;
+      //   }
+      // }
+
+      //  if(topopcount != to.edges) {
+      //   cout<<"--583--"<<endl;
+      //   exit(0);
+      // }
     }
 
     size_t count_edges() {
@@ -512,7 +735,7 @@ public:
 
     //TO DO CHANGE THIS TO ACCOUNT TOMBSTONES
     dst_t get_max_edge() {
-      for(int i=max(1ul, capacity/64);i>=0;i--)
+      for(int i=max(1ul, capacity/64)-1;i>=0;i--)
       {
         if(*(bitmask+i)!=0){
           for(int j=0;j<64;j++)
@@ -528,7 +751,7 @@ public:
         if(*(bitmask+i)!=0){
           for(int j=0;j<64;j++)
             if(*(bitmask+i) & (1ul<<j)) 
-              return (i*64 + (63-j)+1);
+              return min((i*64 + (63-j)+1), (int)capacity);
             
         }
       }

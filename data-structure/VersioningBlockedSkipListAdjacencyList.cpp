@@ -147,7 +147,7 @@ dst_t *VersioningBlockedSkipListAdjacencyList::get_data_pointer(VSkipListHeader 
   return (dst_t *) ((char *) header + skip_list_header_size());
 }
 
-bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version, char *properties, size_t properties_size) {
+bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version, char *properties, size_t properties_size, bool debug) {
   assert((properties != nullptr && properties_size != 0) || (properties == nullptr && properties_size == 0));
   assert(properties_size == property_size && "We allow only properties of the same size for all edges.");
 
@@ -168,13 +168,20 @@ bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
   } else {
     switch (get_set_type(edge.src, version)) {
       case SINGLE_BLOCK: {
-        insert_single_block(edge, version, properties);
+        insert_single_block(edge, version, properties, debug);
+        // edge_t e(0, 3322);
+        // if(has_edge_version_p(e, 100)) cout<<"3322 present after insertion"<<endl;
+        // else cout<<"3322 not present after insertion"<<endl;;
+        // get_weight_version_p(e, version, nullptr);
         return true;
       }
       case SKIP_LIST: {
 
         insert_skip_list(edge, version, properties);
-
+        // edge_t e(0, 3322);
+        // if(has_edge_version_p(e, 100)) cout<<"3322 present after insertion"<<endl;
+        // else cout<<"3322 not present after insertion"<<endl;
+        // get_weight_version_p(e, version, nullptr);
         return true;
       }
       default: {
@@ -270,6 +277,11 @@ bool VersioningBlockedSkipListAdjacencyList::has_edge_version_p(edge_t edge, ver
         pos = find_upper_bound(get_data_pointer(block), eb.get_max_edge_index(), edge.dst);
 
         if(debug){
+          cout<<"looking in has_edge skip_list: "<<edge.src<< " "<<edge.dst<<endl;
+          edge_t e(edge.src, edge.dst);
+          get_weight_version_p(e, version, nullptr);
+
+          cout<<"\n\nblock returned"<<endl;
           for(int i=0;i<block_size;i++)
             cout<< *(block->data+i)<<" ";
           cout<<endl;
@@ -289,6 +301,11 @@ bool VersioningBlockedSkipListAdjacencyList::has_edge_version_p(edge_t edge, ver
       end = start + eb.get_max_edge_index();
       // cout<<"max occupied index in "<< edge.src<<": "<<eb.get_max_edge_index()<<endl;
       pos = find_upper_bound(start, eb.get_max_edge_index(), edge.dst);
+      if(debug){
+        edge_t e(edge.src, edge.dst);
+        cout<<"looking again for edge: "<<edge.src<<" "<<edge.dst<<endl;
+        get_weight_version_p(e, version, nullptr);
+      }
       break;
     }
   }
@@ -516,7 +533,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_empty(edge_t edge, version_t
      
 }
 
-void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, version_t version, char *properties) {
+void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, version_t version, char *properties, bool debug) {
 
   auto chck = [&](int type, dst_t* eb = nullptr, dst_t* new_eb = nullptr, size_t capacity = 0){
     for(version_t i=tm.getMinActiveVersion();i<=version && version>100;i++){
@@ -575,6 +592,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
 
   if (eb.has_space_to_insert_edge()) {
     if(curr_version < version){
+      // cout<<"new version being created :"<<edge.src<<endl;
       local_free_list.add_node(eb.get_single_block_pointer(), version, 0);
       EdgeBlock new_eb = new_single_edge_block(block_capacity);
       // chck(101, eb.get_single_block_pointer(), new_eb.get_single_block_pointer(), block_capacity);
@@ -583,7 +601,8 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
       eb = new_eb;
       // chck(2);
     }
-    eb.insert_edge(edge.dst, 0, properties); 
+    if(debug) cout<<"had space to insert"<<endl;
+    eb.insert_edge(edge.dst, 0, properties, debug); 
     // chck(3);
     adjacency_index.store_single_block(edge.src, eb.get_single_block_pointer(), eb.get_block_capacity(),
                                    eb.get_edges(),version, last_epoch);
@@ -628,9 +647,10 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
       // recursive call of depth 2, inefficient could be done with one time less copying.
       return ;
     } else { // Block full: we double size and copy.
+      if(debug) cout<<"doubled size and then inserting"<<endl;
       auto new_eb = new_single_edge_block(block_capacity * 2);
       eb.copy_into(new_eb);
-      new_eb.insert_edge(edge.dst, version, properties);
+      new_eb.insert_edge(edge.dst, version, properties, debug);
 
       //versions to be taken care of
       adjacency_index.store_single_block(edge.src, new_eb.get_single_block_pointer(), new_eb.get_block_capacity(),
@@ -778,6 +798,8 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
   VSkipListHeader* new_old_block;
 
   if(block->version<version){
+          // cout<<"new version being created :"<<edge.src<<endl;
+
     new_old_block = copy_skip_list_block(edge.src, block,blocks_per_level,version, 2);
     adjacency_list = (VSkipListHeader *) raw_neighbourhood_version(edge.src, version);
   }
@@ -1869,7 +1891,9 @@ VersioningBlockedSkipListAdjacencyList::balance_block(VSkipListHeader *block, VS
       from.update_skip_list_header(balance_against);
       balance_against->changes++;
     }
-    edge_t e{100,200};
+    edge_t e{0,200};
+    // cout<<"balanced block "<<endl<<endl;
+    // get_weight_version_p(e, 100, nullptr);
   }
   else{
     // cout<<"\nNot balancing block\n";
@@ -1895,10 +1919,19 @@ bool VersioningBlockedSkipListAdjacencyList::delete_edge_version(edge_t edge, ve
     switch (get_set_type(edge.src, version)) {
       case SINGLE_BLOCK: {
         auto ans = delete_from_single_block(edge, version);
+        edge_t e(0, 3322);
+        // if(has_edge_version_p(e, 100)) cout<<"3322 present after deletion"<<endl;
+        // else cout<<"3322 not present after deletion"<<endl;
+        // get_weight_version_p(e, version, nullptr);
         return ans;
       }
       case SKIP_LIST: {
-        return delete_skip_list(edge, version);
+        auto ans = delete_skip_list(edge, version);
+        edge_t e(0, 3322);
+        // if(has_edge_version_p(e, 100)) cout<<"3322 present after deletion"<<endl;
+        // else cout<<"3322 not present after deletion"<<endl;
+        // get_weight_version_p(e, version, nullptr);
+        return ans;
       }
       default: {
         throw NotImplemented();
@@ -1959,12 +1992,14 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
   auto[block_capacity, size, curr_version] = adjacency_index.get_single_block_size(edge.src, version);
   auto eb = EdgeBlock::from_single_block((dst_t *) raw_neighbourhood_version(edge.src, version), block_capacity, size, property_size);
   if(curr_version!=version){
+          // cout<<"new version being created :"<<edge.src<<endl;
+
     adjacency_index.create_new_version(edge.src, version, tm.getMinActiveVersion());
     // chck(101);
     int siz = 24*block_capacity;
-    if(eb.get_edges()*(2.2) <= block_capacity){
-      block_capacity = block_capacity >> 1;
-    }
+    // if(eb.get_edges()*(2.2) <= block_capacity){
+    //   block_capacity = block_capacity >> 1;
+    // }
     
     EdgeBlock new_eb = new_single_edge_block(block_capacity);
     
@@ -2029,24 +2064,24 @@ bool VersioningBlockedSkipListAdjacencyList::get_weight_version_p(edge_t edge, v
     case SKIP_LIST: {
       VSkipListHeader *head = (VSkipListHeader *) raw_neighbourhood_version(edge.src, version);
 
-      // cout<<"ben vaalled: "<<edge.src<<" "<<head << "\n\n"<<endl;;
-      // while(head!=nullptr){
-      //   if(head ==0 ) break;
+      cout<<"ben vaalled: "<<edge.src<<" "<<head << "\n\n"<<endl;;
+      while(head!=nullptr){
+        if(head ==0 ) break;
 
-      //   EdgeBlock x = EdgeBlock::from_vskip_list_header(head, block_size,property_size);
-      //   dst_t *iter = x.start;
-      //   x.print_bitset();
-      //   for(int i=0;i<512;i++)
-      //     std::cout<<*(iter+i)<<" ";
-      //   std::cout<<std::endl;
+        EdgeBlock x = EdgeBlock::from_vskip_list_header(head, block_size,property_size);
+        dst_t *iter = x.start;
+        x.print_bitset();
+        for(int i=0;i<512;i++)
+          std::cout<<*(iter+i)<<" ";
+        std::cout<<std::endl;
 
-      //   std::cout<<"max for the block: "<<head->max<<" size for the block: "<<head->size<<" version: "<<head->version<<std::endl<<std::endl;
+        std::cout<<"max for the block: "<<head->max<<" size for the block: "<<head->size<<" version: "<<head->version<<std::endl;
+        std::cout<<"size form eb: "<<x.get_edges()<<endl<<endl;;
 
+        head = (VSkipListHeader*)head->next_levels[0]->get_pointer(version);
 
-      //   head = (VSkipListHeader*)head->next_levels[0]->get_latest_pointer();
-
-      // }
-      // return false;
+      }
+      return false;
       if (head != nullptr) {
         auto block = find_block1(head, edge.dst, version);
         auto eb = EdgeBlock::from_vskip_list_header(block, block_size, property_size);
@@ -2057,9 +2092,18 @@ bool VersioningBlockedSkipListAdjacencyList::get_weight_version_p(edge_t edge, v
       break;
     }
     case SINGLE_BLOCK: {
+      cout<<"ben vaalled: "<<edge.src<<" " << "\n\n"<<endl;;
       auto[block_capacity, size, curr_version] = adjacency_index.get_single_block_size(edge.src,version);
       auto eb = EdgeBlock::from_single_block((dst_t *) raw_neighbourhood_version(edge.src, version), block_capacity,
                                              size, property_size);
+        dst_t *iter = eb.start;
+        eb.print_bitset();
+        for(int i=0;i<block_capacity;i++)
+          std::cout<<*(iter+i)<<" ";
+        std::cout<<std::endl;
+
+        std::cout<<"single block max for the block: "<<eb.get_max_edge()<<" size for the block: "<<eb.get_edges()<<" version: "<<version<<std::endl<<std::endl;
+        return false;
       return eb.get_weight(edge.dst, out);
     }
     default:

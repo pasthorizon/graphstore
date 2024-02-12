@@ -65,7 +65,7 @@ public:
     bool get_weight_version_p(edge_t edge, version_t version, char* out) override;
 
     bool insert_edge_version(edge_t edge, version_t version) override;
-    bool insert_edge_version(edge_t edge, version_t version, char* properties, size_t properties_size) override;
+    bool insert_edge_version(edge_t edge, version_t version, char* properties, size_t properties_size, bool debug = false) override;
     bool delete_edge_version(edge_t edge, version_t version) override;
 
     size_t get_property_size() override;
@@ -128,7 +128,7 @@ protected:
     bool gc_skip_list_block(VSkipListHeader **to_clean, VSkipListHeader *before,
             VSkipListHeader *after, version_t min_version, VSkipListHeader* blocks[SKIP_LIST_LEVELS],
             int leave_space);
-private:
+/*private:*/
     TransactionManager& tm;
     
     std::queue<version_t> versions;
@@ -167,7 +167,7 @@ private:
     VSkipListHeader* new_skip_list_block();
 
     void insert_empty(edge_t edge, version_t version, char* properties);
-    void insert_single_block(edge_t edge, version_t version, char* properties);
+    void insert_single_block(edge_t edge, version_t version, char* properties, bool debug = false);
     void insert_skip_list(edge_t edge, version_t version, char* properties);
 
     // bool size_is_versioned(vertex_id_t v);

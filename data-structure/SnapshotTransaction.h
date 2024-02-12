@@ -112,7 +112,7 @@ private:
     void assert_preconditions();
     void assert_std_preconditions();
 
-    static std::set<pair<int,int>> alledges;
+    // static std::set<pair<int,int>> alledges;
     static mutex lock;
 
     TransactionManager* tm;
