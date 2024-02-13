@@ -75,6 +75,8 @@ class EdgeBlock {
 public:
     EdgeBlock(dst_t *start_block, size_t _capacity, size_t _edges, size_t _property_size){
       
+      if(start_block == nullptr) return;
+
       capacity = _capacity; 
       property_size =_property_size; 
       edges = _edges;

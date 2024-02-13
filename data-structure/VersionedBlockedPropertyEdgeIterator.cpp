@@ -7,12 +7,12 @@
 #include "EdgeBlock.h"
 
 VersionedBlockedPropertyEdgeIterator::VersionedBlockedPropertyEdgeIterator(VersioningBlockedSkipListAdjacencyList *ds,
-                                                                           vertex_id_t v, dst_t *block, size_t size,
+                                                                           vertex_id_t v, dst_t *block, size_t size, size_t _capacity,
                                                                            version_t version,
                                                                            size_t property_size,
                                                                            weight_t* property_column)
-        : VersionedBlockedEdgeIterator(ds, v, block, size, version), property_size(property_size),
-          block_size(0), n_block(nullptr), property_column(property_column), version(version) {
+        : VersionedBlockedEdgeIterator(ds, v, block, _capacity, size , property_size, version), property_size(property_size),
+          block_size(0), n_block(nullptr), property_column(property_column), version(version), capacity(_capacity) {
 }
 
 VersionedBlockedPropertyEdgeIterator::VersionedBlockedPropertyEdgeIterator(VersioningBlockedSkipListAdjacencyList *ds,
@@ -20,7 +20,7 @@ VersionedBlockedPropertyEdgeIterator::VersionedBlockedPropertyEdgeIterator(Versi
                                                                            size_t block_size,
                                                                            version_t version,
                                                                            size_t property_size)
-        : VersionedBlockedEdgeIterator(ds, v, block, version), property_size(property_size),
+        : VersionedBlockedEdgeIterator(ds, v, block, block_size, property_size, version), property_size(property_size),
           block_size(block_size), version(version)
            {
   auto eb = EdgeBlock::from_vskip_list_header(block, block_size, property_size);

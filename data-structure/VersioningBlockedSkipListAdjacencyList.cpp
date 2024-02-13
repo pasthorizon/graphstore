@@ -625,8 +625,10 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
 
 
       adjacency_index[edge.src].adjacency_set.sizes[0] = block_size; 
-
+      // uint64_t start = __rdtsc();
       adjacency_index[edge.src].adjacency_set.add_new_pointer((void*) new_block, version, tm.getMinActiveVersion(),2);
+      // uint64_t end = __rdtsc();
+      // adjacency_index[edge.src].wait_time_aggregate += end - start;
       new_block->before = nullptr;
       new_block->data = new_eb.get_single_block_pointer();
       new_block->height = SKIP_LIST_LEVELS;
@@ -769,11 +771,11 @@ VSkipListHeader* VersioningBlockedSkipListAdjacencyList::copy_skip_list_block(ds
       next->before = new_old_block;
 
     if(block == (VSkipListHeader*)adjacency_index.neighbourhood_version(src,version)){
-      uint64_t start = __rdtsc();
+      // uint64_t start = __rdtsc();
       adjacency_index[src].adjacency_set.add_new_pointer((void*)new_old_block, version, tm.getMinActiveVersion(), 7);
-      uint64_t end = __rdtsc();
+      // uint64_t end = __rdtsc();
 
-      adjacency_index[src].wait_time_aggregate += end-start;
+      // adjacency_index[src].wait_time_aggregate += end-start;
     }
 
     local_free_list.add_node(block, version, block->changes);
@@ -1585,7 +1587,7 @@ dst_t VersioningBlockedSkipListAdjacencyList::get_min_from_skip_list_header(VSki
 VersioningBlockedSkipListAdjacencyList::~VersioningBlockedSkipListAdjacencyList() {
 
    ofstream output;
-  output.open("wait_time.csv");
+  output.open("wait_time_bfs.csv");
 
   int N = max_physical_vertex();
   for(int i=0;i<N;i++){
@@ -1595,7 +1597,7 @@ VersioningBlockedSkipListAdjacencyList::~VersioningBlockedSkipListAdjacencyList(
     if(adjacency_index[i].num_invoke)
      ans = wait/adjacency_index[i].num_invoke;
     // output<<size<<","<<wait<<","<<adjacency_index[i].num_invoke<<","<<ans<<endl;
-    output << i << "," << adjacency_index[i].wait_time_aggregate << endl;
+    output << logical_id(i) << "," << adjacency_index[i].wait_time_aggregate << endl;
   }
 
   // ofstream output_shared;
@@ -1770,12 +1772,13 @@ VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_p(vertex_i
   switch (get_set_type(src, version)) {
     case VSINGLE_BLOCK: {
       auto[capacity, s, curr_version] = adjacency_index.get_single_block_size(src,version);
-      return VersionedBlockedEdgeIterator(this, src, (dst_t *) set, s, version);
+      EdgeBlock eb = EdgeBlock::from_single_block((dst_t*)set, capacity, s, property_size);
+      return VersionedBlockedEdgeIterator(this, src, (dst_t *) set, capacity, s, property_size, version);
     }
     case VSKIP_LIST: {
       VSkipListHeader* ans = (VSkipListHeader*)set;
       
-      return VersionedBlockedEdgeIterator(this, src, (VSkipListHeader *) set, version);
+      return VersionedBlockedEdgeIterator(this, src, (VSkipListHeader *) set, block_size, property_size, version);
     }
     default: {
       throw NotImplemented();
@@ -1793,7 +1796,7 @@ VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_with_prope
     case VSINGLE_BLOCK: {
       auto[capacity, s, curr_version] = adjacency_index.get_single_block_size(src,version);
       auto eb = EdgeBlock::from_single_block((dst_t *) set, capacity, s, property_size);
-      return VersionedBlockedPropertyEdgeIterator(this, src, eb.start, eb.get_edges(),
+      return VersionedBlockedPropertyEdgeIterator(this, src, eb.start, eb.get_edges(), capacity,
                                                   version, property_size,
                                                   (weight_t *) eb.properties_start());
     }

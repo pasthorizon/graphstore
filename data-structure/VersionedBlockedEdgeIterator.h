@@ -20,9 +20,11 @@
   while (_iter.has_next_block()) {             \
     auto [_bs, _be] = _iter.next_block(); bool flag = false; \                                    
     for(auto _i = _bs; _i < _be; _i++) {     \
-      auto edge_name = *_i;           \
-        on_edge                         \
-      } \                                           
+      if(!isDeleted(*_i)){                \
+        auto edge_name = *_i;           \
+        on_edge                             \
+      }                         \
+    } \                                           
   }      \
   [[maybe_unused]] end_label_name: ; \
 }
@@ -35,8 +37,8 @@
 
 class VersionedBlockedEdgeIterator {
 public:
-    VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, dst_t* block, size_t size, version_t version);
-    VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, VSkipListHeader* block, version_t version);
+    VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, dst_t* block, size_t capacity, size_t size, size_t property_size, version_t version);
+    VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, VSkipListHeader* block, size_t capacity, size_t property_size, version_t version);
 
     VersionedBlockedEdgeIterator(VersionedBlockedEdgeIterator& other) = delete;
     VersionedBlockedEdgeIterator& operator=(const VersionedBlockedEdgeIterator&) = delete;
@@ -82,7 +84,9 @@ private:
     dst_t* block = nullptr;
     dst_t* current_block_end = 0;
     bool current_block_is_versioned = false;
-    
+    size_t property_size;
+    size_t capacity;
+    EdgeBlock eb;
 
     dst_t* data = nullptr;
     dst_t current_edge = 0;
