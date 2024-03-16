@@ -67,7 +67,8 @@ public:
 
     VersionedBlockedEdgeIterator neighbourhood_blocked_p(vertex_id_t src) override;
     VersionedBlockedPropertyEdgeIterator neighbourhood_with_properties_blocked_p(vertex_id_t src) override;
-
+    void update_wait_time_shared_p(vertex_id_t src, uint64_t wait_time, int num_invoke){
+    }
     /**
      * Cannot be used. Use raw_ds instead.
      */

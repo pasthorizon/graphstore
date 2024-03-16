@@ -104,6 +104,22 @@ public:
     void rollback_vertex_insert(vertex_id_t v) override;
     VertexIndex adjacency_index;
 
+    void update_read_time_p(vertex_id_t src, uint64_t wait_time, int num_invoke)override{
+        adjacency_index[src].read_time_aggregate += wait_time;
+        adjacency_index[src].read_time_num_invoke += num_invoke;
+    }
+
+    void update_write_time_p(vertex_id_t src, uint64_t wait_time, int num_invoke){
+        adjacency_index[src].write_time_aggregate += wait_time;
+        adjacency_index[src].write_time_num_invoke += num_invoke;
+    }
+
+    void update_copy_time_p(vertex_id_t src, uint64_t wait_time, int num_invoke){
+        adjacency_index[src].copy_time_aggregate += wait_time;
+        adjacency_index[src].copy_time_num_invoke += num_invoke;
+    }
+
+
 protected:
     bool gc_block(vertex_id_t v);
     bool gc_skip_list(vertex_id_t v);

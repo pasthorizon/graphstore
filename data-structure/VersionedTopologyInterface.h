@@ -87,6 +87,8 @@ public:
     virtual void gc_vertex(vertex_id_t v) = 0;
 
     virtual void rollback_vertex_insert(vertex_id_t v) = 0;
+
+    virtual void update_read_time_p(vertex_id_t src, uint64_t wait_time, int num_invoke) = 0;
 };
 
 

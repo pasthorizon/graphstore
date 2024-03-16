@@ -358,7 +358,7 @@ void SnapshotTransaction::assert_std_preconditions() {
   if (!edge_does_not_exists_semantic_activated) {
     // New edges cannot exist already
     for (auto [e, _, _1] : edges_to_insert) {
-      if (ds->has_edge_version(e, commit_version)) {
+      if (commit_version <= 100 && ds->has_edge_version(e, commit_version)) {
         edge_t p_edge(ds->physical_id(e.src), ds->physical_id(e.dst));
         ds->has_edge_version_p(p_edge, commit_version, true);
         throw EdgeExistsException(e);
@@ -369,7 +369,7 @@ void SnapshotTransaction::assert_std_preconditions() {
 // thread_local int VersioningBlockedSkipListAdjacencyList::gc_merges = 0;
 // thread_local int VersioningBlockedSkipListAdjacencyList::gc_to_single_block = 0;
     for (auto e : edges_to_delete) {
-      if (!ds->has_edge_version(e, commit_version)) {
+      if (commit_version<=100 && !ds->has_edge_version(e, commit_version)) {
         pair<int,int> tofind = make_pair(ds->physical_id(e.src), ds->physical_id(e.dst));
         
 

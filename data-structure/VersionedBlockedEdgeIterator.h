@@ -14,8 +14,10 @@
 #include "VersioningBlockedSkipListAdjacencyList.h"
 // TODO define early stop
 
+
 #define SORTLEDTON_ITERATE_NAMED(tx, src, edge_name, end_label_name, on_edge) { \
   __label__ end_label_name;  \
+  uint64_t start = __rdtsc();\
   VersionedBlockedEdgeIterator _iter = tx.neighbourhood_blocked_p(src); \
   while (_iter.has_next_block()) {             \
     auto [_bs, _be] = _iter.next_block(); bool flag = false; \                                    
@@ -26,6 +28,7 @@
       }                         \
     } \                                           
   }      \
+  _iter.ds->update_read_time_p(src, __rdtsc() - start, 1); \
   [[maybe_unused]] end_label_name: ; \
 }
 
