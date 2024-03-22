@@ -20,7 +20,7 @@
   uint64_t start = __rdtsc();\
   VersionedBlockedEdgeIterator _iter = tx.neighbourhood_blocked_p(src); \
   while (_iter.has_next_block()) {             \
-    auto [_bs, _be] = _iter.next_block(); bool flag = false; \                                    
+    auto [_bs, _be] = _iter.next_block(); bool flag = false; \  
     for(auto _i = _bs; _i < _be; _i++) {     \
       if(!isDeleted(*_i)){                \
         auto edge_name = *_i;           \

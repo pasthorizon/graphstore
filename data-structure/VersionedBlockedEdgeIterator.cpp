@@ -10,7 +10,7 @@
 #include <utils/NotImplemented.h>
 
 VersionedBlockedEdgeIterator::VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v,dst_t *block, size_t _capacity, size_t size, size_t _property_size, version_t version)
-        : ds(ds), src(v), block(block), current_block_end(block + size), version(version), data(block), eb(block,_capacity, size, _property_size) {
+        : ds(ds), src(v), block(block), current_block_end(block + _capacity), version(version), data(block), eb(block,_capacity, size, _property_size) {
           property_size = _property_size;
           capacity = _capacity;
           isasingleblock = true;
@@ -43,7 +43,7 @@ bool VersionedBlockedEdgeIterator::has_next_block() {
     // std::cout<<"yup:"<<*block<<" "<<src<<"\n";
     return true;
   } else if (n_block != nullptr) {
-    eb = EdgeBlock::from_vskip_list_header(n_block, n_block->size, property_size);
+    eb = EdgeBlock::from_vskip_list_header(n_block, capacity, property_size);
     block = n_block->data;
     current_block_end = block + eb.get_max_edge_index();
     

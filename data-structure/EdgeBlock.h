@@ -96,7 +96,7 @@ public:
           *(bitmask + i) = 0;
       }
       if(edges==0)
-        memset(start, 128, sizeof(dst_t)*capacity);
+        memset(start, 255, sizeof(dst_t)*capacity);
 
       // cout<<"edge block created successfully"<<endl;
     }

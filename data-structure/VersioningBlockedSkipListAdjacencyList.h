@@ -119,6 +119,7 @@ public:
         adjacency_index[src].copy_time_num_invoke += num_invoke;
     }
 
+    void validate_change(version_t version, vertex_id_t v, int tp, size_t before);
 
 protected:
     bool gc_block(vertex_id_t v);
