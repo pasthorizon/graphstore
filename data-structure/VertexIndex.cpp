@@ -78,7 +78,7 @@ void VertexIndex::aquire_vertex_lock_p(vertex_id_t v) {
   uint64_t end = __rdtsc();
 
   index[v].wait_time_aggregate += end - start;
-  index[v].num_invoke ++;
+  index[v].wait_time_num_invoke ++;
 }
 
 void VertexIndex::aquire_vertex_lock_shared_p(const vertex_id_t v) {
@@ -86,7 +86,8 @@ void VertexIndex::aquire_vertex_lock_shared_p(const vertex_id_t v) {
   index[v].lock.lock_shared();
   uint64_t end = __rdtsc();
   index[v].wait_time_aggregate_shared += end-start;
-  index[v].num_invoke_shared ++;
+  index[v].wait_time_shared_num_invoke ++;
+  // cout<<"hello world"<<endl;
 }
 
 void VertexIndex::release_vertex_lock_shared_p(const vertex_id_t v) {

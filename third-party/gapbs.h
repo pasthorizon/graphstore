@@ -207,6 +207,8 @@ private:
     static uint64_t bit_offset(size_t n) { return n & (kBitsPerWord - 1); }
 };
 
+// const uint64_t Bitmap::kBitsPerWord = 64;
+
 /*
 GAP Benchmark Suite
 Class:  SlidingQueue

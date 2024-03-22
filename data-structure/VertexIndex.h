@@ -72,10 +72,19 @@ struct VertexEntry {
     RWSpinLock lock {};
 
     uint64_t wait_time_aggregate = 0;
-    uint64_t num_invoke = 0;
+    uint64_t wait_time_num_invoke = 0;
+    
+    uint64_t read_time_aggregate = 0;
+    uint64_t read_time_num_invoke = 0;
+
+    uint64_t write_time_aggregate = 0;
+    uint64_t write_time_num_invoke = 0;
+
+    uint64_t copy_time_aggregate = 0;
+    uint64_t copy_time_num_invoke = 0;
 
     atomic<uint64_t> wait_time_aggregate_shared{0ul};
-    atomic<uint64_t> num_invoke_shared{0ul};
+    atomic<uint64_t> wait_time_shared_num_invoke{0ul};
 
     VertexEntry() {
         
@@ -135,7 +144,12 @@ public:
 
     inline void create_new_version(vertex_id_t v, version_t version, version_t min_active_version){
       void *latest_pointer = index[v].adjacency_set.get_latest_pointer();
-      index[v].adjacency_set.add_new_pointer(latest_pointer, version, min_active_version);
+      version_t latest_version = index[v].adjacency_set.get_latest_version();
+      // uint64_t start = __rdtsc();
+      if(version>latest_version)
+        index[v].adjacency_set.add_new_pointer(latest_pointer, version, min_active_version);
+      // uint64_t end = __rdtsc();
+      // index[v].wait_time_aggregate += end - start;
       return;
     }
 

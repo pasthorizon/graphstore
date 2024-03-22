@@ -53,25 +53,26 @@ void *AllInlineAccessPointers::get_pointer(version_t version, bool debug) const{
 
 
 void AllInlineAccessPointers::add_new_pointer(void *pointer, version_t version, version_t minActive, int type){
-    int toReplace=0;
-    version_t replaced_version = versions[0];
-    if(replaced_version!=version){
-        for(int i=1;i<MAX_EPOCHS;i++)
-        {
-            if(versions[i]<minActive){
-                toReplace = i;
-                break;
+    
+        int toReplace=0;
+        version_t replaced_version = versions[0];
+        if(replaced_version!=version){
+            for(int i=1;i<MAX_EPOCHS;i++)
+            {
+                if(versions[i]<minActive){
+                    toReplace = i;
+                    break;
+                }
             }
+
+            pointers[toReplace] = pointers[0];
+            versions[toReplace] = replaced_version;
+
+            pointers[0] = pointer;
+            versions[0] = version;
+
         }
-
-        pointers[toReplace] = pointers[0];
-        versions[toReplace] = replaced_version;
-
-        pointers[0] = pointer;
-        versions[0] = version;
-
-    }
-    else pointers[0] = pointer;
+        else pointers[0] = pointer;
 }
 
 
@@ -110,27 +111,27 @@ tuple<uint64_t,version_t> AllInlineAccessPointersWithSize::get_size(version_t ve
 }
 
 void  AllInlineAccessPointersWithSize::add_new_pointer(void *pointer, version_t version, version_t minActive, int type){
-    int toReplace=0;
-    version_t replaced_version = versions[0];
-    if(replaced_version!=version){
-        for(int i=1;i<MAX_EPOCHS;i++)
-        {
-            if(versions[i] < minActive){
-                toReplace = i;
-                break;
+        int toReplace=0;
+        version_t replaced_version = versions[0];
+        if(replaced_version!=version){
+            for(int i=1;i<MAX_EPOCHS;i++)
+            {
+                if(versions[i] < minActive){
+                    toReplace = i;
+                    break;
+                }
             }
+
+            pointers[toReplace] = pointers[0];
+            versions[toReplace] = replaced_version;
+            sizes[toReplace] = sizes[0];
+
+            pointers[0] = pointer;
+            versions[0] = version;
         }
+        else pointers[0] = pointer;
+    
 
-        pointers[toReplace] = pointers[0];
-        versions[toReplace] = replaced_version;
-        sizes[toReplace] = sizes[0];
-
-        pointers[0] = pointer;
-        versions[0] = version;
-
-        
-    }
-    else pointers[0] = pointer;
 }
 
 

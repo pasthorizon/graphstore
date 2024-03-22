@@ -60,7 +60,7 @@ public:
     virtual void intersect_neighbourhood_version_p(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) = 0;
 
     virtual bool insert_edge_version(edge_t edge, version_t version) = 0;
-    virtual bool insert_edge_version(edge_t edge, version_t version, char* properties, size_t properties_size) = 0;
+    virtual bool insert_edge_version(edge_t edge, version_t version, char* properties, size_t properties_size, bool debug = false) = 0;
     virtual bool delete_edge_version(edge_t edge, version_t version) = 0;
 
     virtual size_t get_property_size() = 0;
@@ -87,6 +87,8 @@ public:
     virtual void gc_vertex(vertex_id_t v) = 0;
 
     virtual void rollback_vertex_insert(vertex_id_t v) = 0;
+
+    virtual void update_read_time_p(vertex_id_t src, uint64_t wait_time, int num_invoke) = 0;
 };
 
 

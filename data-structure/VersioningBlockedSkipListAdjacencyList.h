@@ -65,7 +65,7 @@ public:
     bool get_weight_version_p(edge_t edge, version_t version, char* out) override;
 
     bool insert_edge_version(edge_t edge, version_t version) override;
-    bool insert_edge_version(edge_t edge, version_t version, char* properties, size_t properties_size) override;
+    bool insert_edge_version(edge_t edge, version_t version, char* properties, size_t properties_size, bool debug = false) override;
     bool delete_edge_version(edge_t edge, version_t version) override;
 
     size_t get_property_size() override;
@@ -104,6 +104,23 @@ public:
     void rollback_vertex_insert(vertex_id_t v) override;
     VertexIndex adjacency_index;
 
+    void update_read_time_p(vertex_id_t src, uint64_t wait_time, int num_invoke)override{
+        adjacency_index[src].read_time_aggregate += wait_time;
+        adjacency_index[src].read_time_num_invoke += num_invoke;
+    }
+
+    void update_write_time_p(vertex_id_t src, uint64_t wait_time, int num_invoke){
+        adjacency_index[src].write_time_aggregate += wait_time;
+        adjacency_index[src].write_time_num_invoke += num_invoke;
+    }
+
+    void update_copy_time_p(vertex_id_t src, uint64_t wait_time, int num_invoke){
+        adjacency_index[src].copy_time_aggregate += wait_time;
+        adjacency_index[src].copy_time_num_invoke += num_invoke;
+    }
+
+    void validate_change(version_t version, vertex_id_t v, int tp, size_t before);
+
 protected:
     bool gc_block(vertex_id_t v);
     bool gc_skip_list(vertex_id_t v);
@@ -128,7 +145,7 @@ protected:
     bool gc_skip_list_block(VSkipListHeader **to_clean, VSkipListHeader *before,
             VSkipListHeader *after, version_t min_version, VSkipListHeader* blocks[SKIP_LIST_LEVELS],
             int leave_space);
-private:
+/*private:*/
     TransactionManager& tm;
     
     std::queue<version_t> versions;
@@ -161,13 +178,13 @@ private:
     size_t skip_list_header_size() const;
     dst_t* get_data_pointer(VSkipListHeader* header) const;
 
-    dst_t* find_upper_bound(dst_t* start, uint16_t size, dst_t value);
+    dst_t* find_upper_bound(dst_t* start, uint16_t size, dst_t value, bool debug=false);
 
     EdgeBlock new_single_edge_block(size_t min_capicity_in_edges);
     VSkipListHeader* new_skip_list_block();
 
     void insert_empty(edge_t edge, version_t version, char* properties);
-    void insert_single_block(edge_t edge, version_t version, char* properties);
+    void insert_single_block(edge_t edge, version_t version, char* properties, bool debug = false);
     void insert_skip_list(edge_t edge, version_t version, char* properties);
 
     // bool size_is_versioned(vertex_id_t v);

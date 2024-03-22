@@ -15,10 +15,12 @@
                                                                                                         \
       auto _p = _ws;                                                                                              \
       for (auto _i = _bs; _i < _be; _i++) {     \
-        auto edge_name = *_i;                                                                                    \
-        auto properties_name = *_p;                                                                               \
+        if(!is_deletion(*_i)){                                                                                       \
+          auto edge_name = *_i;                                                                                    \
+          auto properties_name = *_p;                                               \
+          on_edge                                                                    \                                                
+        }                                                                           \
         _p++;                                                                                                         \
-        on_edge\
       }                                           \
   }                                            \
   [[maybe_unused]] end_label_name: ; \
@@ -30,11 +32,11 @@
 class VersionedBlockedPropertyEdgeIterator : public VersionedBlockedEdgeIterator {
 public:
     VersionedBlockedPropertyEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, dst_t* block,
-                                         size_t size, version_t version, size_t property_size,
+                                         size_t size, size_t _capacity, version_t version, size_t property_size,
                                          weight_t* property_column);
 
     VersionedBlockedPropertyEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v,
-                                         VSkipListHeader* block, size_t block_size, version_t version,
+                                         VSkipListHeader* block, size_t _capacity, version_t version,
                                          size_t property_size);
 
     /**
@@ -59,6 +61,8 @@ public:
 private:
     const size_t property_size;
     const size_t block_size;
+
+    size_t capacity;
 
     bool first_block = true;
     version_t version;

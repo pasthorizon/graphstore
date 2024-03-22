@@ -150,15 +150,15 @@ namespace { // anonymous
       const int64_t N = tx.max_physical_vertex();
       pvector<int64_t> distances(N);
       auto edge_sum = 0;
-      for(int i=0;i<2;i++){
   #pragma omp parallel for reduction(+: edge_sum)
         for (int64_t n = 0; n < N; n++) {
-          int64_t out_degree = tx.neighbourhood_size_p(n);
+          int64_t out_degree =  tx.neighbourhood_size_p(n);
           edge_sum += out_degree;
           distances[n] = out_degree != 0 ? -out_degree : -1;
+         
         }
-      }
       edge_count = edge_sum;
+      // cout<<edge_sum<<endl;
       // std::this_thread::sleep_for(std::chrono::milliseconds(180));
       return distances;
     }
@@ -186,7 +186,7 @@ GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neig
   pvector<int64_t> distances = InitDistances(tx, edges_to_check);
   distances[start_vertex] = 0;
   
- uint64_t vertex_count = tx.max_physical_vertex();
+  uint64_t vertex_count = tx.max_physical_vertex();
   SlidingQueue<int64_t> queue(vertex_count);
   queue.push_back(start_vertex);
   queue.slide_window();

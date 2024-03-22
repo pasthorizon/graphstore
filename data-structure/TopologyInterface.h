@@ -71,6 +71,8 @@ public:
     virtual void bulkload(const SortedCSRDataSource& src) = 0;
 
     virtual void report_storage_size() = 0;
+
+    virtual void update_wait_time_shared_p(vertex_id_t src, uint64_t wait_time, int num_invoke) = 0;
 };
 
 
