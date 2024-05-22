@@ -25,7 +25,7 @@ SnapshotTransaction::SnapshotTransaction(TransactionManager* tm, bool write_only
   if (!write_only) {
     read_version =   tm->get_epoch();
     if(analytics){
-      read_version--;
+      // read_version--;
       m_analytics = true;
     }
     if (ds != nullptr) {
@@ -421,6 +421,7 @@ void SnapshotTransaction::rollback() {
 }
 
 size_t SnapshotTransaction::max_physical_vertex() {
+  cout<<"\n\nread version: "<<read_version<<" max vertex id: "<<max_physical_vertex_id<<endl<<endl<<endl;
   return max_physical_vertex_id;
 }
 

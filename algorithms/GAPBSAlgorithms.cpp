@@ -155,10 +155,12 @@ namespace { // anonymous
           int64_t out_degree =  tx.neighbourhood_size_p(n);
           edge_sum += out_degree;
           distances[n] = out_degree != 0 ? -out_degree : -1;
-         
+          // SORTLEDTON_ITERATE(tx, n, {
+            
+          // });
         }
       edge_count = edge_sum;
-      // cout<<edge_sum<<endl;
+      cout<<edge_sum<<endl;
       // std::this_thread::sleep_for(std::chrono::milliseconds(180));
       return distances;
     }

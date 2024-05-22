@@ -32,6 +32,7 @@ vector<vertex_id_t> CDLP::teseo_cdlp(TopologyInterface &ds, uint64_t max_iterati
       // shared among the neighbours of node_id
 
       SORTLEDTON_ITERATE(ds, v, {
+        if(e<num_vertices)
         histogram[labels0[e]]++;
       });
 

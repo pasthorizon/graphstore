@@ -39,13 +39,13 @@ more consistent performance for undirected graphs.
 vector<vertex_id_t> WCC::gapbs_wcc(TopologyInterface &ds) {
   const uint64_t V = ds.max_physical_vertex();
   vector<vertex_id_t> components(V);
-
 #pragma omp parallel for
   for (uint64_t v = 0; v < V; v++) {
     components[v] = v;
   }
 
   bool change = true;
+  int num_iters = 0;
   while (change) {
     change = false;
 
@@ -53,15 +53,17 @@ vector<vertex_id_t> WCC::gapbs_wcc(TopologyInterface &ds) {
 #pragma omp parallel for schedule(dynamic, 64)
       for (uint64_t v = 0; v < V; v++) {
         SORTLEDTON_ITERATE(ds, v, {
-          uint64_t comp_v = components[v];
-          uint64_t comp_n = components[e];
-          if (comp_n != comp_v) {
-            // Hooking condition so lower component ID wins independent of direction
-            uint64_t high_comp = std::max(comp_n, comp_v);
-            uint64_t low_comp = std::min(comp_n, comp_v);
-            if (high_comp == components[high_comp]) {
-              change = true;
-              components[high_comp] = low_comp;
+          if(e<V){
+            uint64_t comp_v = components[v];
+            uint64_t comp_n = components[e];
+            if (comp_n != comp_v) {
+              // Hooking condition so lower component ID wins independent of direction
+              uint64_t high_comp = std::max(comp_n, comp_v);
+              uint64_t low_comp = std::min(comp_n, comp_v);
+              if (high_comp == components[high_comp]) {
+                change = true;
+                components[high_comp] = low_comp;
+              }
             }
           }
         });
@@ -73,8 +75,9 @@ vector<vertex_id_t> WCC::gapbs_wcc(TopologyInterface &ds) {
           components[v] = components[components[v]];
         }
       }
-
+      num_iters++;
   }
+  cout<<"\n\nnum iters: "<<num_iters<<endl;
   return components;
 }
 #pragma clang diagnostic pop

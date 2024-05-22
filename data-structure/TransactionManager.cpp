@@ -119,6 +119,12 @@ const vector<version_t> &TransactionManager::get_sorted_versions() {
 bool TransactionManager::create_epoch(uint64_t version){
   min_version = version-2;
   epoch_number.store(version);
+
+  //wait for readers on the last epoch to finish
+  //stall the newcoming writers
+  //wait for all the active writer threads to finish
+  
+  //create new epoch, continue with the writes
   
   return true;
 }

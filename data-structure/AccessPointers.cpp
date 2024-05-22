@@ -47,8 +47,9 @@ void *AllInlineAccessPointers::get_pointer(version_t version, bool debug) const{
             ans = i, diff = abs((long long)this_version-(long long)version);
         
     }
-
-    return pointers[ans];
+    if(version >= versions[ans])
+        return pointers[ans];
+    else return nullptr;
 }
 
 
@@ -106,8 +107,9 @@ tuple<uint64_t,version_t> AllInlineAccessPointersWithSize::get_size(version_t ve
         if(this_version<=version && diff > abs((long long)this_version-(long long)version))
             ans = i, diff = abs((long long)this_version-(long long)version), ans_version = this_version;
     }
-    
-    return {sizes[ans], ans_version};
+    if(ans_version <= version)
+        return {sizes[ans], ans_version};
+    else return {0,0};
 }
 
 void  AllInlineAccessPointersWithSize::add_new_pointer(void *pointer, version_t version, version_t minActive, int type){

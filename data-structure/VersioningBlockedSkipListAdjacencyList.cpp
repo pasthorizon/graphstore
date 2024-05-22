@@ -1525,18 +1525,18 @@ dst_t VersioningBlockedSkipListAdjacencyList::get_min_from_skip_list_header(VSki
 
 VersioningBlockedSkipListAdjacencyList::~VersioningBlockedSkipListAdjacencyList() {
 
-  //  ofstream output;
-  // output.open("wait_time.csv");
+   ofstream output;
+  output.open("wait_time_bfs.csv");
 
-  // int N = max_physical_vertex();
-  // for(int i=0;i<N;i++){
-  //   size_t size = neighbourhood_size_version_p(i, 100000000000000);
-  //   double wait = adjacency_index[i].wait_time_aggregate;
-  //   double ans=0;
-  //   if(adjacency_index[i].wait_time_num_invoke)
-  //    ans = wait/adjacency_index[i].wait_time_num_invoke;
-  //   output<<size<<","<<wait<<","<<adjacency_index[i].wait_time_num_invoke<<","<<ans<<endl;
-  // }
+  int N = max_physical_vertex();
+  for(int i=0;i<N;i++){
+    size_t size = neighbourhood_size_version_p(i, 100000000000000);
+    double wait = adjacency_index[i].wait_time_aggregate;
+    double ans=0;
+    if(adjacency_index[i].wait_time_num_invoke)
+     ans = wait/adjacency_index[i].wait_time_num_invoke;
+    output<<size<<","<<wait<<","<<adjacency_index[i].wait_time_num_invoke<<","<<ans<<endl;
+  }
 
   // ofstream output_shared;
   // output_shared.open("wait_time_shared.csv");
@@ -1762,18 +1762,31 @@ size_t VersioningBlockedSkipListAdjacencyList::get_property_size() {
 
 VersionedBlockedEdgeIterator
 VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_p(vertex_id_t src, version_t version) {
-  // aquire_vertex_lock_shared_p(src);  // Only released once the iterator is closed. Dirty!
+   aquire_vertex_lock_shared_p(src);  // Only released once the iterator is closed. Dirty!
   void *set = raw_neighbourhood_version(src, version);
+
+  if(set == nullptr){
+     VSkipListHeader* ans = (VSkipListHeader*)set;
+      return VersionedBlockedEdgeIterator(this, src, (VSkipListHeader *) set, block_size, property_size, version);
+  }
 
   switch (get_set_type(src, version)) {
     case VSINGLE_BLOCK: {
       auto[capacity, s, curr_version] = adjacency_index.get_single_block_size(src,version);
+      if(curr_version>version){
+        cout<<"wrong reading single block"<<endl<<endl;
+        exit(0);
+      }
       EdgeBlock eb = EdgeBlock::from_single_block((dst_t*)set, capacity, s, property_size);
       return VersionedBlockedEdgeIterator(this, src, (dst_t *) set, capacity, s, property_size, version);
     }
     case VSKIP_LIST: {
       VSkipListHeader* ans = (VSkipListHeader*)set;
-      
+      if(ans->version > version){
+        cout<<ans->version<<" "<<version<<endl;
+        cout<<"wrong reading"<<endl<<endl;
+        exit(0);
+      }
       return VersionedBlockedEdgeIterator(this, src, (VSkipListHeader *) set, block_size, property_size, version);
     }
     default: {
@@ -1785,7 +1798,7 @@ VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_p(vertex_i
 VersionedBlockedPropertyEdgeIterator
 VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_with_properties_p(vertex_id_t src,
                                                                                         version_t version) {
-  // aquire_vertex_lock_shared_p(src);  // Only released once the iterator is closed. Dirty!
+   aquire_vertex_lock_shared_p(src);  // Only released once the iterator is closed. Dirty!
   void *set = raw_neighbourhood_version(src, version);
 
   switch (get_set_type(src, version)) {

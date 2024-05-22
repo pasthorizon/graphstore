@@ -99,6 +99,7 @@ vector<double> PageRank::page_rank_bs(TopologyInterface &ds, int num_iterations,
     for (uint64_t v = 0; v < max_physical_vertices; v++) {
       double incoming_total = 0;
       SORTLEDTON_ITERATE(ds, v, {
+        if(e<num_vertices)
         incoming_total += outgoing_contrib[e];
       });
       scores[v] = base_score + damping_factor * (incoming_total + dangling_sum);

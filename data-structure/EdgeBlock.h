@@ -201,28 +201,6 @@ public:
      */
     bool insert_edge(dst_t e, weight_t weight, char *property, bool debug = false) {
 
-
-      // if(debug)
-      //   {
-      //     cout<<"[debug insert edge] trying to insert "<<e<<endl;
-      //     cout<<"block capacity: "<<capacity<<endl;
-      //     print_bitset(); 
-
-      //     for(int i=0;i<capacity;i++)
-      //       cout<<*(start+i)<<" ";
-      //     cout<<endl;
-      //     cout<<endl;
-
-      //   }
-      // int _left, _units_to_move; bool happend1 = false, happend2 = false, happend3 = false, happend4 = false;
-      // uint64_t before_bitmask[] = {0,0,0,0,0,0,0,0};
-      // dst_t before_state[] = {0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0 };
-      
-      // for(int i=0;i<min(64, (int)capacity);i++)
-      //   *(before_state + i) = *(start+i);
-      
-      // for(int i=0;i<max(1ul, capacity/64);i++)
-      //   before_bitmask[i] = *(bitmask+i);
       assert(has_space_to_insert_edge());
       auto pos = find_upper_bound(start, get_max_edge_index(), e);
       int new_pos = pos-start;
@@ -236,16 +214,10 @@ public:
         memmove(weights + left, weights + left + 1, units_to_move*sizeof(weight_t));
         memmove(properties + (left)*property_size ,properties + property_size*(left+1), units_to_move*property_size);
         pos--; new_pos--;
-        // happend1 = true;
-        // if(debug)
-        // cout<<"edge to be inserted in the end; new_pos: "<<new_pos<<endl;
+        
       }
       else if(!isBitSet(bitmask, new_pos)){
-        // cout<<"can insert edge here at pos: "<<new_pos<<endl;
-        // if(e==1114) cout<<"finding unset bit pos"<<endl;
-        // happend2 = true;
-        // if(debug)
-        // cout<<"edge to be inserted in an already empty slot: "<<new_pos<<endl;
+        
       }
       else if(inline_unmask(*pos)!=e){
         if(debug){
@@ -288,50 +260,7 @@ public:
         // cout<<"inserted edge now setting bit"<<endl;
         setbit(bitmask, new_pos);
       edges+=1;
-
-      // if(debug){
-      //   cout<<"[debug] final state of block: "<<endl;
-      //   print_bitset();
-      //   for(int i=0;i<capacity;i++)
-      //     cout<<*(start+i)<<" ";
-      //   cout<<endl;
-      // }
-      // int popcount = 0; int count =0 ;
-      // for(int i=0;i<max(1ul, capacity/64);i++){
-      //   for(int j=63;j>=0 && count<capacity;j--){
-      //     count++;
-      //     if(*(bitmask+i) & (1ul<<j))
-      //       popcount ++;
-      //   } 
-      // }
-
-      // if(popcount != edges){
-      //   cout<<"\nhappend: "<<happend1<<" "<<happend2<<" "<<happend3<<" "<<happend4<<endl;
-      //   cout<<"\nleft: "<<_left<<" _units_to_move: "<<_units_to_move<<endl;
-      //   cout<<popcount<<" "<<edges<<endl;
-      //   cout<<"before bitmask: "<<endl;
-      //   for(int i=0;i<max(1ul, capacity/64);i++)
-      //   {
-      //     for(int j=63;j>=0;j--)
-      //       if(*(before_bitmask+i) & (1ul<<j)) cout<<1;
-      //       else cout<<0;
-          
-      //     cout<<" ";
-      //   }
-      //   cout<<endl;
-      //   print_bitset();
-      //   cout<<"capacity: "<<capacity<<endl;
-      //   cout<<"inserted edge "<<e<<" at new pos: "<<new_pos<<endl;
-      //   for(int i=0;i<capacity;i++)
-      //     cout<<*(start+i)<<" ";
-      //   cout<<endl<<endl;
-
-      //   for(int i=0;i<capacity;i++)
-      //     cout<<*(before_state+i)<<" ";
-      //   cout<<endl;
-      //   exit(0);
-      // }
-
+      
       return true;
 
     };

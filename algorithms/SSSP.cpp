@@ -81,27 +81,28 @@ vector<weight_t> SSSP::gabbs_sssp(TopologyInterface &ds, uint64_t physical_sourc
         if (dist[u] >= delta * static_cast<weight_t>(curr_bin_index)) {
 
           SORTLEDTON_ITERATE_WITH_PROPERTIES_NAMED(tx, u, v, w, end_iteration, {
-            weight_t old_dist = dist[v];
-            weight_t new_dist = dist[u] + w;
+            if(v<num_vertices){
+              weight_t old_dist = dist[v];
+              weight_t new_dist = dist[u] + w;
 
-            if (new_dist < old_dist) {
-              bool changed_dist = true;
-              while (!gapbs::compare_and_swap(dist[v], old_dist, new_dist)) {
-                old_dist = dist[v];
-                if (old_dist <= new_dist) {
-                  changed_dist = false;
-                  break;
+              if (new_dist < old_dist) {
+                bool changed_dist = true;
+                while (!gapbs::compare_and_swap(dist[v], old_dist, new_dist)) {
+                  old_dist = dist[v];
+                  if (old_dist <= new_dist) {
+                    changed_dist = false;
+                    break;
+                  }
                 }
-              }
-              if (changed_dist) {
-                size_t dest_bin = new_dist / delta;
-                if (dest_bin >= local_bins.size()) {
-                  local_bins.resize(dest_bin + 1);
+                if (changed_dist) {
+                  size_t dest_bin = new_dist / delta;
+                  if (dest_bin >= local_bins.size()) {
+                    local_bins.resize(dest_bin + 1);
+                  }
+                  local_bins[dest_bin].push_back(v);
                 }
-                local_bins[dest_bin].push_back(v);
               }
             }
-
           });
         }
       }
