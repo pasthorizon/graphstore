@@ -1663,9 +1663,7 @@ size_t VersioningBlockedSkipListAdjacencyList::get_max_vertex() {
 
 size_t VersioningBlockedSkipListAdjacencyList::edge_count_version(version_t version) {
   size_t sum = 0;
-  long long other_sum = 0;
-  ofstream output;
-  output.open("edges_size.txt");
+  // long long other_sum = 0;
   for (size_t v = 0, sz = get_max_vertex(); v < sz; v++) {
     bool locked = false;
     if(tm.get_epoch() == version){
@@ -1678,18 +1676,17 @@ size_t VersioningBlockedSkipListAdjacencyList::edge_count_version(version_t vers
     if(locked)
     release_vertex_lock_p(v);
   }
-  // output.close();
-  SnapshotTransaction tx = tm.getSnapshotTransaction(this, false, false);
-  for (size_t v = 0, sz = get_max_vertex(); v < sz; v++) {
-    long long edge_num = 0;
-    long long num_edge = neighbourhood_size_version_p(v, version);
-    SORTLEDTON_ITERATE(tx, v, {
-      other_sum++;
-      edge_num++;
-    });
+  // SnapshotTransaction tx = tm.getSnapshotTransaction(this, false, false);
+  // for (size_t v = 0, sz = get_max_vertex(); v < sz; v++) {
+  //   long long edge_num = 0;
+  //   long long num_edge = neighbourhood_size_version_p(v, version);
+  //   SORTLEDTON_ITERATE(tx, v, {
+  //     other_sum++;
+  //     edge_num++;
+  //   });
     
-  }
-  cout<<"other sum: "<<other_sum<<" sum: "<<sum<<endl;
+  // }
+  // cout<<"other sum: "<<other_sum<<" sum: "<<sum<<endl;
   return sum;
 }
 
