@@ -9,7 +9,7 @@ add_compile_options(-Wall -Wextra -Wno-unused-parameter -finline-functions)
 #set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -DBITS32)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -DBITS64)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g -march=native -mtune=native -shared-libgcc")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native -mtune=native -shared-libgcc")
 
 find_package(TBB REQUIRED COMPONENTS tbbmalloc tbbmalloc_proxy)
 find_package (Threads)
