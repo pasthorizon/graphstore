@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(sortledton VERSION 1.0 DESCRIPTION "A Universal, Transactional Graph Data Structure")
 
-list(APPEND CMAKE_MODULE_PATH "~/cmake_modules/FindTBB")
 set(CMAKE_CXX_STANDARD 17)
 
 add_compile_options(-Wall -Wextra -Wno-unused-parameter -finline-functions)
@@ -12,7 +11,7 @@ set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -DBITS64)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g -march=native -mtune=native -shared-libgcc")
 
-find_package(TBB COMPONENTS tbbmalloc tbbmalloc_proxy)
+find_package(TBB REQUIRED COMPONENTS tbbmalloc tbbmalloc_proxy)
 find_package (Threads)
 find_package(OpenMP)
 
@@ -68,14 +67,14 @@ set(SRC
 add_library(sortledton STATIC ${SRC})
 target_link_libraries(sortledton OpenMP::OpenMP_CXX)
 target_link_libraries (sortledton Threads::Threads)
-target_link_libraries(sortledton ${TBB_LIBRARIES})
+target_link_libraries(sortledton tbb)
 set_target_properties(sortledton PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(sortledton PROPERTIES SOVERSION 1)
 
 # Binary used for internal driver
 add_executable(sortledton_bin internal-driver/main.cpp ${SRC})
 target_link_libraries (sortledton_bin Threads::Threads)
-target_link_libraries(sortledton_bin ${TBB_LIBRARIES})
+target_link_libraries(sortledton_bin tbb)
 target_link_libraries(sortledton_bin OpenMP::OpenMP_CXX)
 
 # Dataset converter for internally binary input format.
